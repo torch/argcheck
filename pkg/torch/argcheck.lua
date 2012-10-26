@@ -273,7 +273,7 @@ function _G.argcheck(...)
       error('expecting (table, function) | {table, function, table, function ... }')
    end
 
-   local usage = {'return function(...)', 'print[['}
+   local usage = {'return function()', 'print[['}
    if globalhelp then
       table.insert(usage, globalhelp)
       table.insert(usage, '')
@@ -287,6 +287,7 @@ function _G.argcheck(...)
    table.insert(usage, 'error("invalid arguments")')
    table.insert(usage, 'end')
    usage = table.concat(usage, '\n')
+--   print(usage)
    usage, err = loadstring(usage)
    if not usage then
       error(err)
