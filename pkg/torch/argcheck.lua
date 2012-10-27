@@ -273,6 +273,17 @@ function _G.argcheck(...)
       error('expecting (table, function) | {table, function, table, function ... }')
    end
 
+   -- note: generateargcheck checks if the argdefs are valid in all possible ways
+   -- so we start by that
+   local code = {'return function(...)', "local narg = select('#', ...)"}
+   for i=1,#pairs/2 do
+      table.insert(code, generateargcheck(pairs[(i-1)*2+1], 'func' .. i))
+   end
+   table.insert(code, "usage()")
+   table.insert(code, "end")
+
+   -- ok, now we generate the usage
+   -- this one is going to be an upvalue for argcheck
    local usage = {'return function()', 'print[['}
    if globalhelp then
       table.insert(usage, globalhelp)
@@ -294,14 +305,9 @@ function _G.argcheck(...)
    end
    usage = usage()
 
-   local code = {'return function(...)', "local narg = select('#', ...)"}
-   for i=1,#pairs/2 do
-      table.insert(code, generateargcheck(pairs[(i-1)*2+1], 'func' .. i))
-   end
-   table.insert(code, "usage()")
-   table.insert(code, "end")
-
-   local env = {type=type, select=select, usage=usage} -- type and select must be fast
+   -- setup the environment properly
+   -- type and select must be fast, so we put them as direct upvalues
+   local env = {type=type, select=select, usage=usage}
    setmetatable(env, {__index=_G})
    for i=1,#pairs/2 do
       env['func' .. i] = pairs[(i-1)*2+2]
