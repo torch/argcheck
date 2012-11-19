@@ -82,7 +82,7 @@ local function generateargcheck(argdefs, funcname)
          for _,argdef in ipairs(argdefs) do
             argdef.luaname = string.format('arg.%s', argdef.name)
             
-            if argdef.named or argdef.default then
+            if argdef.named or argdef.default ~= nil then
                -- argument might not be provided
                if argdef.check and argdef:check() then
                   table.insert(checks, string.format('(%s == nil or (%s))',
@@ -102,7 +102,7 @@ local function generateargcheck(argdefs, funcname)
 
          -- assign local variables
          for _,argdef in ipairs(argdefs) do
-            if argdef.default then
+            if argdef.default ~= nil then
                if argdef.initdefault and argdef:initdefault() then
                   table.insert(txt, string.format('%s = %s or %s', argdef.name, argdef.luaname, argdef:initdefault()))
                else
@@ -126,7 +126,7 @@ local function generateargcheck(argdefs, funcname)
       local nreq = 0
       for _,argdef in ipairs(argdefs) do
          if not argdef.named then
-            if argdef.default then
+            if argdef.default ~= nil then
                ndef = ndef + 1
             else
                nreq = nreq + 1
@@ -144,7 +144,7 @@ local function generateargcheck(argdefs, funcname)
             for _,argdef in ipairs(argdefs) do
                local isvalid = false
                if not argdef.named then
-                  if argdef.default then
+                  if argdef.default ~= nil then
                      defidx = defidx + 1
                      if bit.band(defidx, defmask) ~= 0 then
                         isvalid = true
@@ -171,7 +171,7 @@ local function generateargcheck(argdefs, funcname)
                   end
                end
                -- default reads
-               if not isvalid and argdef.default then
+               if not isvalid and argdef.default ~= nil then
                   if argdef.initdefault and argdef:initdefault() then
                      table.insert(reads, string.format('%s = %s', argdef.name, argdef:initdefault()))
                   else
@@ -212,10 +212,10 @@ local function generateusage(argdefs)
    local hlp = {}
    for _,argdef in ipairs(argdefs) do
       table.insert(arg,
-                   ((argdef.named or argdef.default) and '[' or ' ')
+                   ((argdef.named or argdef.default ~= nil) and '[' or ' ')
                    .. argdef.name .. string.rep(' ', size-#argdef.name)
                    .. (argdef.type and (' = ' .. argdef.type) or '')
-                .. ((argdef.named or argdef.default) and ']' or '')
+                .. ((argdef.named or argdef.default ~= nil) and ']' or '')
              .. (argdef.named and '*' or ''))
       
       local default = ''
