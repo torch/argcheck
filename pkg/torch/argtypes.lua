@@ -1,35 +1,70 @@
 torch.argtypes = {}
 
 torch.argtypes["numbers"] = {
-   vararg = true,
+   vararg = true, -- if needed, one can override it to false
    
    check = function(self)
               local idx = self.luaname:match('select%((%d+), %.%.%.%)')
               if idx then -- ordered arguments
-                 return string.format([[
- (function(...)
-    %s = {}
-    for i=%d,narg do
-       local z = select(i, ...)
-       if type() ~= 'number' then
-          %s = nil
-          return false
-       end
-       table.insert(%s, z)
-    end
-    return true
- end)() ]], self.name, idx, self.name, self.name)
+                 if self.vararg then -- can be (1, 2, 3) or {1, 2, 3}
+                    return string.format([[
+    (function(...)
+        if %d == narg and type(select(%d, ...)) == 'table' then
+           %s = select(%d, ...)
+           if type(%s) ~= 'table' then
+              %s = nil
+              return false
+           end
+           for _,z in ipairs(%s) do
+              if type(z) ~= 'number' then
+                 %s = nil
+                 return false
+              end
+           end
+        else
+           %s = {}
+           for i=%d,narg do
+              local z = select(i, ...)
+              if type(z) ~= 'number' then
+                 %s = nil
+                 return false
+              end
+              table.insert(%s, z)
+           end
+        end
+        return true
+     end)(...) ]], idx, idx, self.name, idx, self.name, self.name, self.name, self.name, self.name, idx, self.name, self.name)
+                 else -- can only be {1, 2, 3}
+                    return string.format([[
+    (function(...)
+        %s = select(%d, ...)
+        if type(%s) ~= 'table' then
+           %s = nil
+           return false
+        end
+        for _,z in ipairs(%s) do
+           if type(z) ~= 'number' then
+              %s = nil
+              return false
+           end
+        end
+        return true
+     end)(...) ]], self.name, idx, self.name, self.name, self.name, self.name)
+                 end
               else -- named arguments
                  return string.format(
                     [[
- (function(...)
-     for _,z in ipairs(%s) do
-        if type(z) ~= 'number' then
-           return false
-        end
-     end
-     return true
-  end)() ]], self.luaname)
+  (function(...)
+      if not %s then
+         return false
+      end
+      for _,z in ipairs(%s) do
+         if type(z) ~= 'number' then
+            return false
+         end
+      end
+      return true
+   end)(...) ]], self.luaname, self.luaname)
               end
            end,
 
