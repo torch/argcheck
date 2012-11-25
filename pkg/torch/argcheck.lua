@@ -62,6 +62,7 @@ local function generateargcheck(argdefs, funcname)
          end
          hasvararg = true
       else
+         -- makes no sense, as an vararg is supposed to eat up all the remaining arguments
          if hasvararg and not argdef.named then
             error(string.format('argument <%s> is defined after a variable argument, which is not allowed', argdef.name))
          end
@@ -82,7 +83,7 @@ local function generateargcheck(argdefs, funcname)
          for _,argdef in ipairs(argdefs) do
             argdef.luaname = string.format('arg.%s', argdef.name)
             
-            if argdef.named or argdef.default ~= nil then
+            if argdef.named or argdef.opt or argdef.default ~= nil then
                -- argument might not be provided
                if argdef.check and argdef:check() then
                   table.insert(checks, string.format('(%s == nil or (%s))',
@@ -125,8 +126,8 @@ local function generateargcheck(argdefs, funcname)
       local ndef = 0
       local nreq = 0
       for _,argdef in ipairs(argdefs) do
-         if not argdef.named then
-            if argdef.default ~= nil then
+         if not argdef.named then -- those are ignored in ordered arguments anyways
+            if argdef.opt or argdef.default ~= nil then
                ndef = ndef + 1
             else
                nreq = nreq + 1
@@ -144,7 +145,7 @@ local function generateargcheck(argdefs, funcname)
             for _,argdef in ipairs(argdefs) do
                local isvalid = false
                if not argdef.named then
-                  if argdef.default ~= nil then
+                  if argdef.opt or argdef.default ~= nil then
                      defidx = defidx + 1
                      if bit.band(defidx, defmask) ~= 0 then
                         isvalid = true
@@ -212,10 +213,10 @@ local function generateusage(argdefs)
    local hlp = {}
    for _,argdef in ipairs(argdefs) do
       table.insert(arg,
-                   ((argdef.named or argdef.default ~= nil) and '[' or ' ')
+                   ((argdef.named or argdef.opt or argdef.default ~= nil) and '[' or ' ')
                    .. argdef.name .. string.rep(' ', size-#argdef.name)
                    .. (argdef.type and (' = ' .. argdef.type) or '')
-                .. ((argdef.named or argdef.default ~= nil) and ']' or '')
+                .. ((argdef.named or argdef.opt or argdef.default ~= nil) and ']' or '')
              .. (argdef.named and '*' or ''))
       
       local default = ''
