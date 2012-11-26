@@ -12,7 +12,7 @@ local function callfunc(funcname, vars, argdefs)
                end
             end
             if not isvalid then
-               error(string.format('argument <%s> defaulta is not a valid argument', argdef.name, argdef.defaulta))
+               error(string.format('argument <%s> has a defaulta <%s> which is not a valid argument', argdef.name, argdef.defaulta))
             end
             table.insert(txt, string.format('%s = %s or %s', argdef.name, argdef.name, argdef.defaulta))
          end
@@ -29,7 +29,7 @@ local function generateargcheck__(txt, argdefs, funcname, vars, named)
    local nreq = 0
    for _,argdef in ipairs(argdefs) do
       if named or not argdef.named then -- those are ignored in ordered arguments anyways
-         if argdef.opt or argdef.default ~= nil then
+         if argdef.opt or argdef.default ~= nil or argdef.defaulta then
             ndef = ndef + 1
          else
             nreq = nreq + 1
@@ -46,7 +46,7 @@ local function generateargcheck__(txt, argdefs, funcname, vars, named)
       for _,argdef in ipairs(argdefs) do
          local isvalid = false
          if named or not argdef.named then
-            if argdef.opt or argdef.default ~= nil then
+            if argdef.opt or argdef.default ~= nil or argdef.defaulta then
                defidx = defidx + 1
                if bit.band(defidx, defmask) ~= 0 then
                   isvalid = true
@@ -112,6 +112,7 @@ local function generateargcheck(argdefs, funcname)
       if argdef.name == 'self' then
          assert(not argdef.opt, 'self cannot be optional')
          assert(not argdef.default, 'self cannot have a default')
+         assert(not argdef.defaulta, 'self cannot have a defaulta')
          assert(not argdef.named, 'self cannot be named-only')
       end
 
@@ -214,14 +215,17 @@ local function generateusage(argdefs)
    local hlp = {}
    for _,argdef in ipairs(argdefs) do
       table.insert(arg,
-                   ((argdef.named or argdef.opt or argdef.default ~= nil) and '[' or ' ')
+                   ((argdef.named or argdef.opt or argdef.default ~= nil or argdef.defaulta) and '[' or ' ')
                    .. argdef.name .. string.rep(' ', size-#argdef.name)
                    .. (argdef.type and (' = ' .. argdef.type) or '')
-                .. ((argdef.named or argdef.opt or argdef.default ~= nil) and ']' or '')
+                .. ((argdef.named or argdef.opt or argdef.default ~= nil or argdef.defaulta) and ']' or '')
              .. (argdef.named and '*' or ''))
       
-      local default = ''
-      if type(argdef.default) == 'nil' then
+      local default
+      if argdef.defaulta then
+         default = string.format(' [defaulta=%s]', argdef.defaulta)
+      elseif type(argdef.default) == 'nil' then
+         default = ''
       elseif type(argdef.default) == 'string' then
          default = string.format(' [default=%s]', argdef.default)
       elseif type(argdef.default) == 'number' then
@@ -232,7 +236,6 @@ local function generateusage(argdefs)
          default = ' [has default value]'
       end
       table.insert(hlp, (argdef.help or '') .. default)
-                
    end
 
    local size = 0
