@@ -163,6 +163,9 @@ local function generateargcheck(argdefs, funcname)
       table.insert(txt, string.format('local %s', table.concat(vars, ', ')))
    end
 
+   -- handling of ordered arguments
+   generateargcheck__(txt, argdefs, funcname, vars, false)
+
    -- handling of named arguments
    if not argdefs.nonamed then
       if vars.self then
@@ -189,9 +192,6 @@ end]])
 
       table.insert(txt, 'end') -- of named check
    end
-
-   -- handling of ordered arguments
-   generateargcheck__(txt, argdefs, funcname, vars, false)
 
    -- do...end
    table.insert(txt, 'end')
