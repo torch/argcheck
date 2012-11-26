@@ -11,17 +11,17 @@ torch.argtypes["numbers"] = {
     (function(...)
         if %d == narg and type(select(%d, ...)) == 'table' then
            %s = select(%d, ...)
-           if type(%s) ~= 'table' then
+           if type(%s) ~= 'table' or #%s == 0 then
               %s = nil
               return false
            end
-           for _,z in ipairs(%s) do
-              if type(z) ~= 'number' then
+           for k,v in pairs(%s) do
+              if type(k) ~= 'number' or type(v) ~= 'number' then
                  %s = nil
                  return false
               end
            end
-        else
+        else -- here we have something anyways: only check it is a number
            %s = {}
            for i=%d,narg do
               local z = select(i, ...)
@@ -33,39 +33,39 @@ torch.argtypes["numbers"] = {
            end
         end
         return true
-     end)(...) ]], idx, idx, self.name, idx, self.name, self.name, self.name, self.name, self.name, idx, self.name, self.name)
+     end)(...) ]], idx, idx, self.name, idx, self.name, self.name, self.name, self.name, self.name, self.name, idx, self.name, self.name)
                  else -- can only be {1, 2, 3}
                     return string.format([[
     (function(...)
         %s = select(%d, ...)
-        if type(%s) ~= 'table' then
+        if type(%s) ~= 'table' or #%s == 0 then
            %s = nil
            return false
         end
-        for _,z in ipairs(%s) do
-           if type(z) ~= 'number' then
+        for k,v in ipairs(%s) do
+           if type(k) ~= 'number' or type(v) ~= 'number' then
               %s = nil
               return false
            end
         end
         return true
-     end)(...) ]], self.name, idx, self.name, self.name, self.name, self.name)
+     end)(...) ]], self.name, idx, self.name, self.name, self.name, self.name, self.name)
                  end
               else -- named arguments
                  return string.format(
                     [[
   (function(...)
-      if not %s then
+      if type(%s) ~= 'table' or #(%s) == 0 then
          return false
       end
-      for _,z in ipairs(%s) do
-         if type(z) ~= 'number' then
+      for k,v in ipairs(%s) do
+         if type(k) ~= 'number' or type(v) ~= 'number' then
             return false
          end
       end
       %s = %s
       return true
-   end)(...) ]], self.luaname, self.luaname, self.name, self.luaname)
+   end)(...) ]], self.luaname, self.luaname, self.luaname, self.name, self.luaname)
               end
            end,
 
