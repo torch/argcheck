@@ -122,9 +122,32 @@ for _,Tensor in ipairs{'torch.ByteTensor',
                  return string.format("type(%s) == '" .. Tensor .. "'", self.luaname)
               end
            end,
-      
+
       initdefault = function(self)
                        return Tensor .. "()"
+                    end
+   }
+end
+
+for _,Storage in ipairs{'torch.ByteStorage',
+                        'torch.CharStorage',
+                        'torch.ShortStorage',
+                        'torch.IntStorage',
+                        'torch.LongStorage',
+                        'torch.FloatStorage',
+                        'torch.DoubleStorage'} do
+
+   torch.argtypes[Storage] = {
+      check = function(self)
+                 if self.size then
+                    return string.format("type(%s) == '" .. Storage .. "' and (%s).__size == %d", self.luaname, self.luaname, self.size)
+                 else
+                 return string.format("type(%s) == '" .. Storage .. "'", self.luaname)
+              end
+           end,
+
+      initdefault = function(self)
+                       return Storage .. "()"
                     end
    }
 end
