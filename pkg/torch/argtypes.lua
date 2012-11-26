@@ -63,8 +63,9 @@ torch.argtypes["numbers"] = {
             return false
          end
       end
+      %s = %s
       return true
-   end)(...) ]], self.luaname, self.luaname)
+   end)(...) ]], self.luaname, self.luaname, self.name, self.luaname)
               end
            end,
 
