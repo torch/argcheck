@@ -37,63 +37,61 @@ local function generateargcheck__(txt, argdefs, funcname, vars, named)
       end
    end
 
-   if ndef > 0 or nreq > 0 then
-      for defmask=0,2^ndef-1 do
-         local argidx = 0
-         local defidx = 0
-         local checks = {''}
-         local reads = {}
-         local hasvararg = false
-         for _,argdef in ipairs(argdefs) do
-            local isvalid = false
-            if named or not argdef.named then
-               if argdef.opt or argdef.default ~= nil then
-                  defidx = defidx + 1
-                  if bit.band(defidx, defmask) ~= 0 then
-                     isvalid = true
-                  end
-               else
+   for defmask=0,2^ndef-1 do
+      local argidx = 0
+      local defidx = 0
+      local checks = {''} -- we save a spot for the (narg == ...)
+      local reads = {}
+      local hasvararg = false
+      for _,argdef in ipairs(argdefs) do
+         local isvalid = false
+         if named or not argdef.named then
+            if argdef.opt or argdef.default ~= nil then
+               defidx = defidx + 1
+               if bit.band(defidx, defmask) ~= 0 then
                   isvalid = true
                end
-               if isvalid then
-                  argidx = argidx + 1
-                  if argdef.vararg then
-                     hasvararg = true
-                  end
-                  argdef.luaname = named and string.format('arg.%s', argdef.name) or string.format('select(%d, ...)', argidx)
-                  if argdef.check and argdef:check() then
-                     table.insert(checks, argdef:check())
-                     if argdef.read then
-                        if argdef:read() then
-                           table.insert(reads, argdef:read())
-                        end
-                     else
-                        table.insert(reads, string.format('%s = %s', argdef.name, argdef.luaname))
+            else
+               isvalid = true
+            end
+            if isvalid then
+               argidx = argidx + 1
+               if argdef.vararg then
+                  hasvararg = true
+               end
+               argdef.luaname = named and string.format('arg.%s', argdef.name) or string.format('select(%d, ...)', argidx)
+               if argdef.check and argdef:check() then
+                  table.insert(checks, argdef:check())
+                  if argdef.read then
+                     if argdef:read() then
+                        table.insert(reads, argdef:read())
                      end
+                  else
+                     table.insert(reads, string.format('%s = %s', argdef.name, argdef.luaname))
                   end
                end
             end
-            -- default reads
-            if not isvalid and argdef.default ~= nil then
-               if argdef.initdefault and argdef:initdefault() then
-                  table.insert(reads, string.format('%s = %s', argdef.name, argdef:initdefault()))
-               else
-                  error(string.format('do not know how to deal with default argument <%s>', argdef.name))
-               end
+         end
+         -- default reads
+         if not isvalid and argdef.default ~= nil then
+            if argdef.initdefault and argdef:initdefault() then
+               table.insert(reads, string.format('%s = %s', argdef.name, argdef:initdefault()))
+            else
+               error(string.format('do not know how to deal with default argument <%s>', argdef.name))
             end
          end
-         if not named and hasvararg then
-            checks[1] = string.format('narg >= %d', argidx)
-         else
-            checks[1] = string.format('narg == %d', argidx)
-         end
-         table.insert(txt, string.format('if %s then ', table.concat(checks, ' and ')))
-         if #reads > 0 then
-            table.insert(txt, table.concat(reads, '\n'))
-         end
-         table.insert(txt, callfunc(funcname, vars, argdefs))
-         table.insert(txt, 'end')
       end
+      if not named and hasvararg then
+         checks[1] = string.format('narg >= %d', argidx)
+      else
+         checks[1] = string.format('narg == %d', argidx)
+      end
+      table.insert(txt, string.format('if %s then ', table.concat(checks, ' and ')))
+      if #reads > 0 then
+         table.insert(txt, table.concat(reads, '\n'))
+      end
+      table.insert(txt, callfunc(funcname, vars, argdefs))
+      table.insert(txt, 'end')
    end
 end
 
@@ -152,45 +150,46 @@ local function generateargcheck(argdefs, funcname)
       table.insert(vars, argdef.name)
    end
 
+   -- we enclose into a do...end because we might have several variations
+   -- of the call
+   table.insert(txt, 'do')
    if #vars > 0 then
-      -- we enclose into a do...end because we might have several variations
-      -- of the call
-      table.insert(txt, 'do')
       table.insert(txt, string.format('local %s', table.concat(vars, ', ')))
+   end
 
-      -- handling of named arguments
-      if not argdefs.nonamed then
-         if vars.self then
-            local argdef = vars.self
-            argdef.luaname = 'select(1, ...)'
-            if argdef.check and argdef:check() then
-               table.insert(txt, string.format("if narg == 2 and (%s) and type(select(2, ...)) == 'table' then", argdef:check()))
-            else
-               table.insert(txt, "if narg == 2 and type(select(2, ...)) == 'table' then")
-            end
-            table.insert(txt, "local arg = select(2, ...)")
-            table.insert(txt, "local narg = 0")
-            table.insert(txt, "self = select(1, ...)")
+   -- handling of named arguments
+   if not argdefs.nonamed then
+      if vars.self then
+         local argdef = vars.self
+         argdef.luaname = 'select(1, ...)'
+         if argdef.check and argdef:check() then
+            table.insert(txt, string.format("if narg == 2 and (%s) and type(select(2, ...)) == 'table' then", argdef:check()))
          else
-            table.insert(txt, "if narg == 1 and type(select(1, ...)) == 'table' then")
-            table.insert(txt, "local arg = select(1, ...)")
-            table.insert(txt, "local narg = 0")
+            table.insert(txt, "if narg == 2 and type(select(2, ...)) == 'table' then")
          end
-         table.insert(txt, [[
+         table.insert(txt, "local arg = select(2, ...)")
+         table.insert(txt, "local narg = 0")
+         table.insert(txt, "self = select(1, ...)")
+      else
+         table.insert(txt, "if narg == 1 and type(select(1, ...)) == 'table' then")
+         table.insert(txt, "local arg = select(1, ...)")
+         table.insert(txt, "local narg = 0")
+      end
+      table.insert(txt, [[
 for k,v in pairs(arg) do
    narg = narg + 1
 end]])
-         generateargcheck__(txt, argdefs, funcname, vars, true)
+      generateargcheck__(txt, argdefs, funcname, vars, true)
 
-         table.insert(txt, 'end') -- of named check
-      end
-
-      -- handling of ordered arguments   
-      generateargcheck__(txt, argdefs, funcname, vars, false)
-
-      -- do...end
-      table.insert(txt, 'end')
+      table.insert(txt, 'end') -- of named check
    end
+
+   -- handling of ordered arguments
+   generateargcheck__(txt, argdefs, funcname, vars, false)
+
+   -- do...end
+   table.insert(txt, 'end')
+
    return table.concat(txt, '\n')
 end
 
