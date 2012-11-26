@@ -28,12 +28,20 @@ local function generateargcheck(argdefs, funcname)
    local txt = {}
    local vars = {}
    local hasvararg = false
+
    for _,argdef in ipairs(argdefs) do
       assert(type(argdef.name) == 'string', string.format('argument name must be a string'))
 
       -- defined only once?
       if vars[argdef.name] then
          error(string.format('argument %s is defined twice', argdef.name))
+      end
+
+      -- is name self? (in which case we consider it as a method)
+      if argdef.name == 'self' then
+         assert(not argdef.opt, 'self cannot be optional')
+         assert(not argdef.default, 'self cannot have a default')
+         assert(not argdef.named, 'self cannot be named-only')
       end
 
       -- nonamed inconsistency?
@@ -67,7 +75,7 @@ local function generateargcheck(argdefs, funcname)
             error(string.format('argument <%s> is defined after a variable argument, which is not allowed', argdef.name))
          end
       end
-      vars[argdef.name] = true
+      vars[argdef.name] = argdef
       table.insert(vars, argdef.name)
    end
    if #vars > 0 then
@@ -76,26 +84,40 @@ local function generateargcheck(argdefs, funcname)
 
       -- handling of named arguments
       if not argdefs.nonamed then
-         table.insert(txt, "if narg == 1 and type(select(1, ...)) == 'table' then")
-         table.insert(txt, "local arg = select(1, ...)")
+         if vars.self then
+            local argdef = vars.self
+            argdef.luaname = 'select(1, ...)'
+            if argdef.check and argdef:check() then
+               table.insert(txt, string.format("if narg == 2 and (%s) and type(select(2, ...)) == 'table' then", argdef:check()))
+            else
+               table.insert(txt, "if narg == 2 and type(select(2, ...)) == 'table' then")
+            end
+            table.insert(txt, "local arg = select(2, ...)")
+            table.insert(txt, "self = select(1, ...)")
+         else
+            table.insert(txt, "if narg == 1 and type(select(1, ...)) == 'table' then")
+            table.insert(txt, "local arg = select(1, ...)")
+         end
 
          local checks = {}
          for _,argdef in ipairs(argdefs) do
-            argdef.luaname = string.format('arg.%s', argdef.name)
-            
-            if argdef.named or argdef.opt or argdef.default ~= nil then
-               -- argument might not be provided
-               if argdef.check and argdef:check() then
-                  table.insert(checks, string.format('(%s == nil or (%s))',
-                                                     argdef.luaname,
-                                                     argdef:check()))
-               end
-            else
-               -- argument must be provided
-               if argdef.check and argdef:check() then
-                  table.insert(checks, string.format('%s', argdef:check()))
+            if argdef.name ~= 'self' then
+               argdef.luaname = string.format('arg.%s', argdef.name)
+
+               if argdef.named or argdef.opt or argdef.default ~= nil then
+                  -- argument might not be provided
+                  if argdef.check and argdef:check() then
+                     table.insert(checks, string.format('(%s == nil or (%s))',
+                                                        argdef.luaname,
+                                                        argdef:check()))
+                  end
                else
-                  table.insert(checks, string.format('%s', argdef.luaname))
+                  -- argument must be provided
+                  if argdef.check and argdef:check() then
+                     table.insert(checks, string.format('%s', argdef:check()))
+                  else
+                     table.insert(checks, string.format('%s', argdef.luaname))
+                  end
                end
             end
          end
@@ -103,16 +125,21 @@ local function generateargcheck(argdefs, funcname)
 
          -- assign local variables
          for _,argdef in ipairs(argdefs) do
-            if argdef.default ~= nil then
-               if argdef.initdefault and argdef:initdefault() then
-                  table.insert(txt, string.format('%s = %s or %s', argdef.name, argdef.luaname, argdef:initdefault()))
+            if argdef.name ~= 'self' then
+               if argdef.default ~= nil then
+                  if argdef.initdefault and argdef:initdefault() then
+                     table.insert(txt, string.format('%s = %s or %s', argdef.name, argdef.luaname, argdef:initdefault()))
+                  else
+                     error(string.format('argument <%s> has a default argument which cannot be handled', argdef.name))
+                  end
                else
-                  error(string.format('argument <%s> has a default argument which cannot be handled', argdef.name))
-               end
-            else
-               table.insert(txt, string.format('%s = %s', argdef.name, argdef.luaname))
-               if argdef.read and argdef:read() then
-                  table.insert(txt, argdef:read())
+                  if argdef.read  then
+                     if argdef:read() then
+                        table.insert(txt, argdef:read())
+                     end
+                  else
+                     table.insert(txt, string.format('%s = %s', argdef.name, argdef.luaname))
+                  end
                end
             end
          end
