@@ -125,9 +125,15 @@ local function generateargcheck(argdefs, funcname)
          error(string.format('argument %s defines <default> and <defaulta>, which is not allowed', argdef.name))
       end
 
-      -- is it a predefined type?
-      if torch.argtypes[argdef.type] then
-         setmetatable(argdef, {__index=torch.argtypes[argdef.type]})
+      -- is it a defined type?
+      if argdef.type then
+         -- note: it was too painful to debug code
+         -- when this was not enforced
+         if not torch.argtypes[argdef.type] then
+            error(string.format('unknown type <%s>', argdef.type))
+         else
+            setmetatable(argdef, {__index=torch.argtypes[argdef.type]})
+         end
       end
 
       assert(not argdef.initdefault or type(argdef.initdefault) == 'function', string.format('argument <%s> initdefault member must be a function', argdef.name))
