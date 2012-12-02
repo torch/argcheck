@@ -97,12 +97,23 @@ torch.argtypes["boolean"] = {
 
 torch.argtypes["string"] = {
    check = function(self)
-              assert(type(self.default) == 'string', string.format('argument <%s> default should be a string', self.name))
               return string.format("type(%s) == 'string'", self.luaname)
            end,
 
    initdefault = function(self)
+                    assert(type(self.default) == 'string', string.format('argument <%s> default should be a string', self.name))
                     return string.format('"%s"', self.default)
+                 end
+}
+
+torch.argtypes["function"] = {
+   check = function(self)
+              return string.format("type(%s) == 'function'", self.luaname)
+           end,
+
+   initdefault = function(self)
+                    assert(type(self.default) == 'function', string.format('argument <%s> default should be a function', self.name))
+                    return string.format('%s', self.default)
                  end
 }
 
