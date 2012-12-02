@@ -252,29 +252,23 @@ local function generateusage(argdefs)
 end
 
 function _G.argcheck(...)
-   local narg = select('#', ...)
-   local err
-   local globalhelp
    local pairs
-   if narg == 2 and type(select(1, ...)) == 'table' and type(select(2, ...)) == 'function' then
-      pairs = {select(1, ...), select(2, ...)}
-   elseif narg == 1 and type(select(1, ...)) == 'table' then
-      local tbl = select(1, ...)
-      globalhelp = tbl.help
-      local npairs = #tbl/2
-      local valid = (npairs == math.floor(npairs))
-      if valid then
-         for i=1,npairs do
-            if type(tbl[(i-1)*2+1]) ~= 'table' or type(tbl[(i-1)*2+2]) ~= 'function' then
-               valid = false
-            end
+   if select('#', ...) == 1 and type(select(1, ...)) == 'table' then
+      pairs = select(1, ...)
+   else
+      pairs = {...}
+   end
+
+   local npairs = #pairs/2
+   local valid = (npairs == math.floor(npairs))
+   if valid then
+      for i=1,npairs do
+         if type(pairs[(i-1)*2+1]) ~= 'table' or type(pairs[(i-1)*2+2]) ~= 'function' then
+            valid = false
          end
       end
-      if valid then
-         pairs = tbl
-      end
    end
-   if not pairs then
+   if not valid then
       error('expecting (table, function) | {table, function, table, function ... }')
    end
 
@@ -289,6 +283,7 @@ function _G.argcheck(...)
 
    -- ok, now we generate the usage
    -- this one is going to be an upvalue for argcheck
+   local err
    local usage = {'return function()', 'print[['}
    if globalhelp then
       table.insert(usage, globalhelp)
