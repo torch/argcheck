@@ -251,25 +251,19 @@ local function generateusage(argdefs)
    return table.concat(txt, '\n')
 end
 
-function _G.argcheck(...)
-   local pairs
-   if select('#', ...) == 1 and type(select(1, ...)) == 'table' then
-      pairs = select(1, ...)
-   else
-      pairs = {...}
-   end
-
-   local npairs = #pairs/2
-   local valid = (npairs == math.floor(npairs))
-   if valid then
-      for i=1,npairs do
-         if type(pairs[(i-1)*2+1]) ~= 'table' or type(pairs[(i-1)*2+2]) ~= 'function' then
-            valid = false
+local function argcheck(pairs, hasself)
+   if hasself then
+      for i=1,#pairs/2 do
+         local args = pairs[(i-1)*2+1]
+         if args.self then
+            for _,arg in ipairs(args) do
+               if type(arg) == 'table' and arg.name == args.self then
+                  arg.name = 'self'
+                  break
+               end
+            end
          end
       end
-   end
-   if not valid then
-      error('expecting (table, function) | {table, function, table, function ... }')
    end
 
    -- note: generateargcheck checks if the argdefs are valid in all possible ways
@@ -319,5 +313,52 @@ function _G.argcheck(...)
       error(err)
    end
    setfenv(code, env)
+
+   if hasself then
+      for i=1,#pairs/2 do
+         local args = pairs[(i-1)*2+1]
+         if args.self then
+            for _,arg in ipairs(args) do
+               if type(arg) == 'table' and arg.name == 'self' then
+                  arg.name = arg.self
+                  break
+               end
+            end
+         end
+      end
+   end
+
    return code()
+end
+
+function _G.argcheck(...)
+   local pairs
+   if select('#', ...) == 1 and type(select(1, ...)) == 'table' then
+      pairs = select(1, ...)
+   else
+      pairs = {...}
+   end
+
+   local npairs = #pairs/2
+   local valid = (npairs == math.floor(npairs))
+   local hasself = false
+   if valid then
+      for i=1,npairs do
+         if type(pairs[(i-1)*2+1]) ~= 'table' or type(pairs[(i-1)*2+2]) ~= 'function' then
+            valid = false
+            break
+         end
+         if pairs[(i-1)*2+1].self then
+            hasself = true
+         end
+      end
+   end
+   if not valid then
+      error('expecting (table, function, ...) | {table, function, table, function ... }')
+   end
+   if hasself then
+      return argcheck(pairs, false), argcheck(pairs, true)
+   else
+      return argcheck(pairs)
+   end
 end
