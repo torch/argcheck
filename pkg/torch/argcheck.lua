@@ -114,6 +114,7 @@ local function generateargcheck(argdefs, funcname)
          assert(not argdef.default, 'self cannot have a default')
          assert(not argdef.defaulta, 'self cannot have a defaulta')
          assert(not argdef.named, 'self cannot be named-only')
+         assert(#vars == 0, 'self must be the first argument')
       end
 
       -- nonamed inconsistency?
