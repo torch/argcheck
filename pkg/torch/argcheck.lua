@@ -252,10 +252,10 @@ local function generateusage(argdefs)
    return table.concat(txt, '\n')
 end
 
-local function argcheck(pairs, hasself)
-   if hasself then
-      for i=1,#pairs/2 do
-         local args = pairs[(i-1)*2+1]
+local function argcheck(argfuncs, ismethod)
+   if ismethod then
+      for i=1,#argfuncs/2 do
+         local args = argfuncs[(i-1)*2+1]
          if args.self then
             for _,arg in ipairs(args) do
                if type(arg) == 'table' and arg.name == args.self then
@@ -264,14 +264,25 @@ local function argcheck(pairs, hasself)
                end
             end
          end
+         for _,arg in ipairs(args) do
+            if type(arg) == 'table' and arg.method then
+               assert(type(arg.method) == 'table', 'method modifier must be a table')
+               local methodsav = {}
+               for k,v in pairs(arg.method) do
+                  methodsav[k] = arg[k]
+                  arg[k] = v
+               end
+               arg.methodsav = methodsav
+            end
+         end
       end
    end
 
    -- note: generateargcheck checks if the argdefs are valid in all possible ways
    -- so we start by that
    local code = {'return function(...)', "local narg = select('#', ...)"}
-   for i=1,#pairs/2 do
-      table.insert(code, generateargcheck(pairs[(i-1)*2+1], 'func' .. i))
+   for i=1,#argfuncs/2 do
+      table.insert(code, generateargcheck(argfuncs[(i-1)*2+1], 'func' .. i))
    end
    table.insert(code, "usage()")
    table.insert(code, "end")
@@ -285,8 +296,8 @@ local function argcheck(pairs, hasself)
       table.insert(usage, '')
    end
    local hlp = {}
-   for i=1,#pairs/2 do
-      table.insert(hlp, generateusage(pairs[(i-1)*2+1]))
+   for i=1,#argfuncs/2 do
+      table.insert(hlp, generateusage(argfuncs[(i-1)*2+1]))
    end
    table.insert(usage, table.concat(hlp, '\n\nor\n\n'))
    table.insert(usage, ']]')
@@ -304,8 +315,8 @@ local function argcheck(pairs, hasself)
    -- type and select must be fast, so we put them as direct upvalues
    local env = {type=type, select=select, usage=usage}
    setmetatable(env, {__index=_G})
-   for i=1,#pairs/2 do
-      env['func' .. i] = pairs[(i-1)*2+2]
+   for i=1,#argfuncs/2 do
+      env['func' .. i] = argfuncs[(i-1)*2+2]
    end
    code = table.concat(code, '\n')
 --   print(code)
@@ -315,15 +326,27 @@ local function argcheck(pairs, hasself)
    end
    setfenv(code, env)
 
-   if hasself then
-      for i=1,#pairs/2 do
-         local args = pairs[(i-1)*2+1]
+   -- put back things as they were before
+   -- to avoid any kind of surprises
+   if ismethod then
+      for i=1,#argfuncs/2 do
+         local args = argfuncs[(i-1)*2+1]
          if args.self then
             for _,arg in ipairs(args) do
                if type(arg) == 'table' and arg.name == 'self' then
                   arg.name = arg.self
                   break
                end
+            end
+         end
+         for _,arg in ipairs(args) do
+            if type(arg) == 'table' and arg.method then
+               assert(type(arg.method) == 'table', 'method modifier must be a table')
+               local methodsav = arg.methodsav
+               for k,v in pairs(arg.method) do
+                  arg[k] = methodsav[k]
+               end
+               arg.methodsav = nil
             end
          end
       end
@@ -333,23 +356,23 @@ local function argcheck(pairs, hasself)
 end
 
 function _G.argcheck(...)
-   local pairs
+   local argfuncs
    if select('#', ...) == 1 and type(select(1, ...)) == 'table' then
-      pairs = select(1, ...)
+      argfuncs = select(1, ...)
    else
-      pairs = {...}
+      argfuncs = {...}
    end
 
-   local npairs = #pairs/2
-   local valid = (npairs == math.floor(npairs))
+   local nargfuncs = #argfuncs/2
+   local valid = (nargfuncs == math.floor(nargfuncs))
    local hasself = false
    if valid then
-      for i=1,npairs do
-         if type(pairs[(i-1)*2+1]) ~= 'table' or type(pairs[(i-1)*2+2]) ~= 'function' then
+      for i=1,nargfuncs do
+         if type(argfuncs[(i-1)*2+1]) ~= 'table' or type(argfuncs[(i-1)*2+2]) ~= 'function' then
             valid = false
             break
          end
-         if pairs[(i-1)*2+1].self then
+         if argfuncs[(i-1)*2+1].self then
             hasself = true
          end
       end
@@ -358,8 +381,8 @@ function _G.argcheck(...)
       error('expecting (table, function, ...) | {table, function, table, function ... }')
    end
    if hasself then
-      return argcheck(pairs, false), argcheck(pairs, true)
+      return argcheck(argfuncs, false), argcheck(argfuncs, true)
    else
-      return argcheck(pairs)
+      return argcheck(argfuncs)
    end
 end
