@@ -80,7 +80,7 @@ torch.argtypes["number"] = {
 
    initdefault = function(self)
                     assert(type(self.default) == 'number', string.format('argument <%s> default should be a number', self.name))
-                    return string.format('%s', self.default)
+                    return string.format('%s = %s', self.name, self.default)
                  end
 }
 
@@ -91,7 +91,7 @@ torch.argtypes["boolean"] = {
 
    initdefault = function(self)
                     assert(type(self.default) == 'boolean', string.format('argument <%s> default should be a boolean', self.name))
-                    return string.format('%s', self.default)
+                    return string.format('%s = %s', self.name, self.default)
                  end
 }
 
@@ -102,19 +102,20 @@ torch.argtypes["string"] = {
 
    initdefault = function(self)
                     assert(type(self.default) == 'string', string.format('argument <%s> default should be a string', self.name))
-                    return string.format('"%s"', self.default)
+                    return string.format('%s = "%s"', self.name, self.default)
                  end
 }
 
 torch.argtypes["function"] = {
    check = function(self)
               return string.format("type(%s) == 'function'", self.luaname)
-           end,
+           end
+}
 
-   initdefault = function(self)
-                    assert(type(self.default) == 'function', string.format('argument <%s> default should be a function', self.name))
-                    return string.format('%s', self.default)
-                 end
+torch.argtypes["table"] = {
+   check = function(self)
+              return string.format("type(%s) == 'table'", self.luaname)
+           end
 }
 
 for _,Tensor in ipairs{'torch.ByteTensor',
@@ -135,7 +136,7 @@ for _,Tensor in ipairs{'torch.ByteTensor',
            end,
 
       initdefault = function(self)
-                       return Tensor .. "()"
+                       return string.format('%s = %s()', self.name, Tensor)
                     end
    }
 end
@@ -158,7 +159,7 @@ for _,Storage in ipairs{'torch.ByteStorage',
            end,
 
       initdefault = function(self)
-                       return Storage .. "()"
+                       return string.format('%s = %s()', self.name, Storage)
                     end
    }
 end

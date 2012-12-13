@@ -75,9 +75,9 @@ local function generateargcheck__(txt, argdefs, funcname, vars, named)
          -- default reads
          if not isvalid and argdef.default ~= nil then
             if argdef.initdefault and argdef:initdefault() then
-               table.insert(reads, string.format('%s = %s', argdef.name, argdef:initdefault()))
+               table.insert(reads, string.format(argdef:initdefault()))
             else
-               error(string.format('do not know how to deal with default argument <%s>', argdef.name))
+               error(string.format('no support for default argument <%s>', argdef.name))
             end
          end
       end
