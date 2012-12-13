@@ -319,7 +319,9 @@ local function argcheck(argfuncs, ismethod)
       env['func' .. i] = argfuncs[(i-1)*2+2]
    end
    code = table.concat(code, '\n')
---   print(code)
+   if argfuncs.debug then
+      print(code)
+   end
    code, err = loadstring(code)
    if not code then
       error(err)
