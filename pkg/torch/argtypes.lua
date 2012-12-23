@@ -1,5 +1,11 @@
 torch.argtypes = {}
 
+torch.argtypes["__default"] = {
+   check = function(self)
+              return string.format("type(%s) == '%s'", self.luaname, self.type)
+           end
+}
+
 torch.argtypes["numbers"] = {
    vararg = true, -- if needed, one can override it to false
    
@@ -104,18 +110,6 @@ torch.argtypes["string"] = {
                     assert(type(self.default) == 'string', string.format('argument <%s> default should be a string', self.name))
                     return string.format('%s = "%s"', self.name, self.default)
                  end
-}
-
-torch.argtypes["function"] = {
-   check = function(self)
-              return string.format("type(%s) == 'function'", self.luaname)
-           end
-}
-
-torch.argtypes["table"] = {
-   check = function(self)
-              return string.format("type(%s) == 'table'", self.luaname)
-           end
 }
 
 for _,Tensor in ipairs{'torch.ByteTensor',

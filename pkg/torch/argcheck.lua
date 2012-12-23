@@ -131,10 +131,10 @@ local function generateargcheck(argdefs, funcname)
       if argdef.type then
          -- note: it was too painful to debug code
          -- when this was not enforced
-         if not torch.argtypes[argdef.type] then
-            error(string.format('unknown type <%s>', argdef.type))
-         else
+         if torch.argtypes[argdef.type] then
             setmetatable(argdef, {__index=torch.argtypes[argdef.type]})
+         else
+            setmetatable(argdef, {__index=torch.argtypes.__default})
          end
       end
 
