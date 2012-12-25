@@ -1,12 +1,19 @@
-torch.argtypes = {}
+local argcheck = require 'torch.argcheck'
+local argcheckenv = getfenv(argcheck)
 
-torch.argtypes["__default"] = {
+function argcheckenv.istype(obj, typename)
+   return type(ob) == typename
+end
+
+local argtypes = argcheckenv.argtypes
+
+argtypes["__default"] = {
    check = function(self)
-              return string.format("type(%s) == '%s'", self.luaname, self.type)
+              return string.format("istype(%s, '%s')", self.luaname, self.type)
            end
 }
 
-torch.argtypes["numbers"] = {
+argtypes["numbers"] = {
    vararg = true, -- if needed, one can override it to false
    
    check = function(self)
@@ -79,7 +86,7 @@ torch.argtypes["numbers"] = {
           end
 }
 
-torch.argtypes["number"] = {
+argtypes["number"] = {
    check = function(self)
               return string.format("type(%s) == 'number'", self.luaname)
            end,
@@ -90,7 +97,7 @@ torch.argtypes["number"] = {
                  end
 }
 
-torch.argtypes["boolean"] = {
+argtypes["boolean"] = {
    check = function(self)
               return string.format("type(%s) == 'boolean'", self.luaname)
            end,
@@ -101,7 +108,7 @@ torch.argtypes["boolean"] = {
                  end
 }
 
-torch.argtypes["string"] = {
+argtypes["string"] = {
    check = function(self)
               return string.format("type(%s) == 'string'", self.luaname)
            end,
@@ -120,7 +127,7 @@ for _,Tensor in ipairs{'torch.ByteTensor',
                        'torch.FloatTensor',
                        'torch.DoubleTensor'} do
 
-   torch.argtypes[Tensor] = {
+   argtypes[Tensor] = {
       check = function(self)
                  if self.dim then
                     return string.format("type(%s) == '" .. Tensor .. "' and (%s).__nDimension == %d", self.luaname, self.luaname, self.dim)
@@ -143,7 +150,7 @@ for _,Storage in ipairs{'torch.ByteStorage',
                         'torch.FloatStorage',
                         'torch.DoubleStorage'} do
 
-   torch.argtypes[Storage] = {
+   argtypes[Storage] = {
       check = function(self)
                  if self.size then
                     return string.format("type(%s) == '" .. Storage .. "' and (%s).__size == %d", self.luaname, self.luaname, self.size)

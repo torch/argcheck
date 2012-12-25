@@ -1,3 +1,7 @@
+local argcheckenv = {type=type, argtypes={}}
+setmetatable(argcheckenv, {__index=_G})
+setfenv(1, argcheckenv)
+
 local function callfunc(funcname, vars, argdefs)
    local txt = {}
    if #vars > 0 then
@@ -131,10 +135,10 @@ local function generateargcheck(argdefs, funcname)
       if argdef.type then
          -- note: it was too painful to debug code
          -- when this was not enforced
-         if torch.argtypes[argdef.type] then
-            setmetatable(argdef, {__index=torch.argtypes[argdef.type]})
+         if argtypes[argdef.type] then
+            setmetatable(argdef, {__index=argtypes[argdef.type]})
          else
-            setmetatable(argdef, {__index=torch.argtypes.__default})
+            setmetatable(argdef, {__index=argtypes.__default})
          end
       end
 
@@ -252,7 +256,7 @@ local function generateusage(argdefs)
    return table.concat(txt, '\n')
 end
 
-local function argcheck(argfuncs, ismethod)
+local function argcheck__(argfuncs, ismethod)
    if ismethod then
       for i=1,#argfuncs/2 do
          local args = argfuncs[(i-1)*2+1]
@@ -313,8 +317,9 @@ local function argcheck(argfuncs, ismethod)
 
    -- setup the environment properly
    -- type and select must be fast, so we put them as direct upvalues
-   local env = {type=type, select=select, usage=usage}
-   setmetatable(env, {__index=_G})
+   local env = {usage=usage}
+   setmetatable(env, {__index=argcheckenv})
+
    for i=1,#argfuncs/2 do
       env['func' .. i] = argfuncs[(i-1)*2+2]
    end
@@ -357,7 +362,7 @@ local function argcheck(argfuncs, ismethod)
    return code()
 end
 
-function _G.argcheck(...)
+local function argcheck(...)
    local argfuncs
    if select('#', ...) == 1 and type(select(1, ...)) == 'table' then
       argfuncs = select(1, ...)
@@ -383,8 +388,10 @@ function _G.argcheck(...)
       error('expecting (table, function, ...) | {table, function, table, function ... }')
    end
    if hasself then
-      return argcheck(argfuncs, false), argcheck(argfuncs, true)
+      return argcheck__(argfuncs, false), argcheck__(argfuncs, true)
    else
-      return argcheck(argfuncs)
+      return argcheck__(argfuncs)
    end
 end
+
+return argcheck
