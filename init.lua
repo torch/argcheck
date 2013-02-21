@@ -394,4 +394,7 @@ local function argcheck(...)
    end
 end
 
+package.loaded.argcheck = argcheck
+require 'argcheck.argtypes'
+
 return argcheck
