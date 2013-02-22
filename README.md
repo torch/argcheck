@@ -13,6 +13,6 @@ Installation
 The easiest is to use [luarocks](http://www.luarocks.org).
 
 ```sh
-luarocks install argcheck
+luarocks build https://raw.github.com/andresy/argcheck/master/rocks/argcheck-scm-1.rockspec
 ```
 
