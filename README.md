@@ -111,3 +111,45 @@ Give a number, it adds 5. Amazing.
 
 [string "return function()..."]:12: invalid arguments
 ```
+
+### Multiple arguments
+
+Until now, our function had only one argument. Obviously, argcheck can
+handle as many as you wish:
+```lua
+addfive = argcheck(
+ {help=[[
+This function is going to do a stupid addition.
+Give a number, it adds 5. Amazing.]],
+ {name="x", type="number", default=0, help="the age of the captain"},
+ {name="msg", type="string", help="a message"}},
+ function(x, msg)
+   print(string.format('%f + 5 = %f', x, x+5))
+   print(msg)
+ end
+)
+```
+Argcheck handles well various cases, including those where some arguments
+with defaults values might be missing:
+```lua
+> addfive(4, 'hello world')
+4.000000 + 5 = 9.000000
+hello world
+>
+> addfive('hello world')
+0.000000 + 5 = 5.000000
+hello world
+>
+> addfive(4)
+
+This function is going to do a stupid addition.
+Give a number, it adds 5. Amazing.
+
+> arguments:
+{
+  [x   = number]  -- the age of the captain [default=0]
+   msg = string   -- a message
+}
+
+[string "return function()..."]:13: invalid arguments
+```
