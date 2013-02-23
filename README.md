@@ -34,7 +34,7 @@ check arguments. Assume you have a function which requires a unique number
 argument:
 ```lua
 function addfive(x)
-  print(string.format('%f + 5 = %f', x, x+5)
+  print(string.format('%f + 5 = %f', x, x+5))
 end
 ```
 You can make sure everything goes fine by doing:
@@ -42,7 +42,32 @@ You can make sure everything goes fine by doing:
 addfive = argcheck(
  {{name="x", type="number"}},
  function(x)
-   print(string.format('%f + 5 = %f', x, x+5)
+   print(string.format('%f + 5 = %f', x, x+5))
  end
 )
+```
+If a user try to pass a wrong argument, too many arguments, or no arguments
+at all, `argcheck` will complain:
+```lua
+> arguments:
+{
+  x = number  -- 
+}
+   
+[string "return function()..."]:8: invalid arguments
+```
+Simple argument types like `number`, `string` or `boolean` can have defaults:
+```lua
+addfive = argcheck(
+ {{name="x", type="number", default=0}},
+ function(x)
+   print(string.format('%f + 5 = %f', x, x+5))
+ end
+)
+```
+In which case, if the argument is missing, `argcheck` will pass the default
+one to your function:
+```lua
+> addfive()
+0.000000 + 5 = 5.000000
 ```
