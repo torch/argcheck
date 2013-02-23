@@ -56,6 +56,8 @@ at all, `argcheck` will complain:
    
 [string "return function()..."]:8: invalid arguments
 ```
+
+### Default arguments
 Simple argument types like `number`, `string` or `boolean` can have defaults:
 ```lua
 addfive = argcheck(
@@ -70,4 +72,42 @@ one to your function:
 ```lua
 > addfive()
 0.000000 + 5 = 5.000000
+```
+
+### Help
+Argcheck encourages you to add help to your function. You can document each argument:
+```lua
+addfive = argcheck(
+ {{name="x", type="number", default=0, help="the age of the captain"}},
+ function(x)
+   print(string.format('%f + 5 = %f', x, x+5))
+ end
+)
+```
+Or even document the function:
+```lua
+addfive = argcheck(
+ {help=[[
+This function is going to do a stupid addition.
+Give a number, it adds 5. Amazing.]],
+ {name="x", type="number", default=0, help="the age of the captain"}},
+ function(x)
+   print(string.format('%f + 5 = %f', x, x+5))
+ end
+)
+```
+Then, if the user makes a mistake in the arguments, the error message
+becomes more clear:
+```lua
+> addfive('')
+                                                                                                     
+This function is going to do a stupid addition.                                                               
+Give a number, it adds 5. Amazing.
+
+> arguments:
+{
+   [x = number]  -- the age of the captain [default=0]
+}
+
+[string "return function()..."]:12: invalid arguments
 ```
