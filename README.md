@@ -153,3 +153,31 @@ Give a number, it adds 5. Amazing.
 
 [string "return function()..."]:13: invalid arguments
 ```
+
+### Optional arguments
+
+Arguments with a default value can be seen as optional. However, as they
+have a default value, the underlying function will never receive a `nil`
+value. In some situation, one might need to declare an optional argument
+with no default value. You can do this with the `opt` option.
+```lua
+addfive = argcheck(
+ {help=[[
+ This function is going to do a stupid addition.
+ Give a number, it adds 5. Amazing.]],
+  {name="x", type="number", default=0, help="the age of the captain"},
+  {name="msg", type="string", help="a message", opt=true}},
+  function(x, msg)
+     print(string.format('%f + 5 = %f', x, x+5))
+     print(msg)
+  end
+)
+```
+In this example, one might call `addfive()` without the `msg` argument. Of
+course, the underlying function must be able to handle `nil` values:
+```lua
+> addfive()
+0.000000 + 5 = 5.000000
+nil
+```
+
