@@ -181,3 +181,86 @@ course, the underlying function must be able to handle `nil` values:
 nil
 ```
 
+### Named arguments
+
+Argcheck handles named argument. Following the previous example, both
+```lua
+addfive(1, "hello world")
+```
+and
+```lua
+addfive{x=1, msg="hello world"}
+```
+are equivalent.
+
+#### Named-only arguments
+
+In the event of a function with many options, one might have some arguments
+which can be only passed as named arguments ``{}``: having a lot of
+optional arguments in the an ordered function call ``()`` can become
+quickly messy. In the following example, `msg` is a named argument:
+```lua
+addfive = argcheck(
+ {{name="x", type="number", default=0, help="the age of the captain"},
+  {name="msg", type="string", help="a message", named=true}},
+  function(x, msg)
+     print(string.format('%f + 5 = %f', x, x+5))
+     print(msg)
+  end
+)
+```
+Named arguments are optional, by definition. It is up to the programmer
+to handle properly possible `nil` values received by the function:
+```lua
+> addfive(5)
+5.000000 + 5 = 10.000000
+nil
+```
+As mentioned earlier, the difference between a pure optional (`opt`) argument and
+a named argument is that the named argument cannot be passed in an ordered argument call:
+```lua
+> addfive(5, "hello world")
+> arguments:
+{
+  [x   = number]   -- the age of the captain [default=0]
+  [msg = string]*  -- a message
+}
+```
+Note that argcheck mentions named argument with a `*` in the help message.
+Thus, the following works:
+```lua
+> addfive{x=5, msg="hello world"}
+5.000000 + 5 = 10.000000
+hello world
+```
+
+#### Disabling named-argument calls
+
+In some very special cases (rare), one might want to disable named
+calls. That might be to handle some ambiguous calls, e.g. when one has to
+deal with table arguments. The option `nonamed` can be used for that purpose:
+```lua
+addfive = argcheck(
+ {
+  nonamed=true,
+  {name="x", type="number", default=0, help="the age of the captain"},
+  {name="msg", type="string", help="a message"}},
+  function(x, msg)
+     print(string.format('%f + 5 = %f', x, x+5))
+     print(msg)
+  end
+)
+```
+Obviously, mixing the `nonamed` option with `named`-only arguments is a
+non-sense, and not allowed by argcheck. With the above example, argcheck
+would raise an error if called with named arguments:
+```lua
+> addfive{x=5, msg="hello world"}
+> arguments:
+(
+  [x   = number]  -- the age of the captain [default=0]
+   msg = string   -- a message
+)
+```
+Note the subtile difference in the help display, where `{}` have been
+replaced by `()`.
