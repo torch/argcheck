@@ -154,6 +154,27 @@ Give a number, it adds 5. Amazing.
 [string "return function()..."]:13: invalid arguments
 ```
 
+### Default arguments defaulting to another argument
+
+Arguments can have a default value coming from another argument, with the
+`defaulta` option. In the following
+```lua
+mul = argcheck(
+ {{name="x", type="number"},
+  {name="y", type="number", defaulta="x"}},
+  function(x, y)
+    print(string.format('%f x %f = %f', x, y, x*y))
+  end
+)
+```
+argument `y` will take the value of `x` if it is not passed during the function call:
+```lua
+> mul(3,4)
+3.000000 x 4.000000 = 12.000000
+> mul(3)
+3.000000 x 3.000000 = 9.000000
+```
+
 ### Optional arguments
 
 Arguments with a default value can be seen as optional. However, as they
@@ -183,7 +204,7 @@ nil
 
 ### Named arguments
 
-Argcheck handles named argument. Following the previous example, both
+Argcheck handles named argument calls. Following the previous example, both
 ```lua
 addfive(1, "hello world")
 ```
