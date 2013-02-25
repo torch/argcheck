@@ -285,3 +285,27 @@ would raise an error if called with named arguments:
 ```
 Note the subtile difference in the help display, where `{}` have been
 replaced by `()`.
+
+### Allowed types
+
+Argcheck "knows" the following types (specified with the `type` option of any argument):
+*   `number`
+*   `boolean`
+*   `string`
+*   `numbers` -- a vararg argument, which can take several numbers (see below)
+
+If no type is given, no type check will be done. E.g.:
+```lua
+> display = argcheck{debug=true,
+ {{name="value"}},
+  function(value)
+    print(value)
+  end
+}
+
+> display(5)
+5
+
+> display("hello world")
+hello world
+```
