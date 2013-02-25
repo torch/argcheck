@@ -140,6 +140,8 @@ local function generateargcheck(argdefs, funcname)
          else
             setmetatable(argdef, {__index=argtypes.__default})
          end
+      else
+         setmetatable(argdef, {__index=argtypes.__any})
       end
 
       assert(not argdef.initdefault or type(argdef.initdefault) == 'function', string.format('argument <%s> initdefault member must be a function', argdef.name))

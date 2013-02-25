@@ -13,6 +13,12 @@ argtypes["__default"] = {
            end
 }
 
+argtypes["__any"] = {
+   check = function(self)
+              return string.format("type(%s) ~= nil", self.luaname)
+           end
+}
+
 argtypes["numbers"] = {
    vararg = true, -- if needed, one can override it to false
    
