@@ -294,9 +294,10 @@ Argcheck "knows" the following types (specified with the `type` option of any ar
 *   `string`
 *   `numbers` -- a vararg argument, which can take several numbers (see below)
 
-If no type is given, no type check will be done. E.g.:
+If no type is given, the argument can be anything but `nil` (if you want to allow the
+`nil` value, use the `opt` option). E.g.:
 ```lua
-> display = argcheck{debug=true,
+> display = argcheck{
  {{name="value"}},
   function(value)
     print(value)
@@ -308,4 +309,11 @@ If no type is given, no type check will be done. E.g.:
 
 > display("hello world")
 hello world
+
+> display()
+> arguments:
+{
+   value  --
+}
+luajit: [string "return function()..."]:8: invalid arguments
 ```
