@@ -66,13 +66,13 @@ local function generateargcheck__(txt, argdefs, funcname, vars, named)
                argdef.luaname = named and string.format('arg.%s', argdef.name) or string.format('select(%d, ...)', argidx)
                if argdef.check and argdef:check() then
                   table.insert(checks, argdef:check())
-                  if argdef.read then
-                     if argdef:read() then
-                        table.insert(reads, argdef:read())
-                     end
-                  else
-                     table.insert(reads, string.format('%s = %s', argdef.name, argdef.luaname))
+               end
+               if argdef.read then
+                  if argdef:read() then
+                     table.insert(reads, argdef:read())
                   end
+               else
+                  table.insert(reads, string.format('%s = %s', argdef.name, argdef.luaname))
                end
             end
          end
