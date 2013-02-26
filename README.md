@@ -408,7 +408,7 @@ object:method{name1=arg1, ...}
 one would probably like a function `func` which does the same with:
 ```lua
 func{obj=object, name1=arg1, ...}
-```lua
+```
 instead of
 ```lua
 method(object, {name1=arg1, ...})
@@ -471,6 +471,9 @@ display N times the object
    N    = number  -- 
 }   
 ```
+
+Note that it is the `self=` option in the argument list which activates the
+generation of both the function and the method.
 
 ### Handling multiple heterogeneous cases
 
