@@ -1,3 +1,7 @@
+if not bit then
+   require 'bit'
+end
+
 local argcheckenv = {type=type, argtypes={}}
 setmetatable(argcheckenv, {__index=_G})
 setfenv(1, argcheckenv)

@@ -16,7 +16,18 @@ The easiest is to use [luarocks](http://www.luarocks.org).
 luarocks build https://raw.github.com/andresy/argcheck/master/rocks/argcheck-scm-1.rockspec
 ```
 
-You can also copy the `argcheck` directory where `luajit` will find it.
+You can also copy the `argcheck` directory where `luajit` (or `lua`) will
+find it.
+
+* * *
+
+Note: argcheck requires a `bit` library. If you are not using `luajit` (you
+are seriously encouraged to switch to it), please install first the
+`luabitop` library:
+```sh
+sudo luarocks install luabitop
+```
+* * *
 
 Introduction
 ------------
