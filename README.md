@@ -317,3 +317,74 @@ hello world
 }
 luajit: [string "return function()..."]:8: invalid arguments
 ```
+
+### Methods with `self` argument
+
+In Lua, the syntax sugar call `object:method(arg1, ...)` is often used when
+writing object-oriented code. This call stands for
+```lua
+method(object, arg1, ...)
+```
+If one wants a named argument call, `object:method{name1=arg1, ...}` stands for
+```lua
+method(object, {name1=arg1, ...})
+```
+
+Argcheck handles nicely these type of calls, as long as the object argument is named
+`self`. Here is a complete example:
+
+```lua
+-- the Rectangle class metatable
+local Rectangle = {}
+
+-- the constructor
+Rectangle.new = argcheck{
+   {{name='x', type='number'},
+    {name='y', type='number'},
+    {name='w', type='number'},
+    {name='h', type='number'}},
+   function(x, y, w, h)
+      local rect = {x=x, y=y, w=w, h=h}
+      setmetatable(rect, {__index=Rectangle})
+      return rect
+   end
+}
+
+-- a method:
+Rectangle.display = argcheck{
+   {help='display N times the object',
+    {name='self'}, -- note the name of the first argument
+    {name='N', type='number'}},
+   function(self, N)
+      for i=1,N do
+         print(string.format('Rectangle x=%g y=%g w=%g h=%g',
+                             self.x, self.y, self.w, self.h))
+      end
+   end
+}
+
+-- create a new Rectangle
+local rect = Rectangle.new(5, 7, 10, 20)
+
+-- display it 3 times
+rect:display(3)
+
+-- show the help
+rect:display()
+
+display N times the object
+
+> arguments:
+{
+   self           -- 
+   N    = number  -- 
+}
+      
+luajit: [string "return function()..."]:11: invalid arguments
+```
+
+* * *
+Note: in the above example we do not check the type of the object
+`self`. There are ways to integrate you own types into argcheck, as it will
+be explained later in the advanced usage section.
+* * *
