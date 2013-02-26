@@ -25,7 +25,7 @@ Note: argcheck requires a `bit` library. If you are not using `luajit` (you
 are seriously encouraged to switch to it), please install first the
 `luabitop` library:
 ```sh
-sudo luarocks install luabitop
+luarocks install luabitop
 ```
 * * *
 
