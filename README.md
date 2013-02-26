@@ -388,3 +388,81 @@ Note: in the above example we do not check the type of the object
 `self`. There are ways to integrate you own types into argcheck, as it will
 be explained later in the advanced usage section.
 * * *
+
+### Multiple cases
+
+In some cases, one would like that the same function handles several very
+different cases. Take the example of a fictive `inc()` function, which
+would add one to a number, if a number is given as argument, or would
+concatenate a letter to a string, if a string and a letter bytecode are
+given as argument.
+
+Argcheck can handle these kind of cases. In a call to `argcheck`, each
+argument specifications is followed by a function which will be called if
+the argument specifications are fulfilled.
+
+Here is a concrete example:
+```lua
+inc = argcheck(
+
+  {{name="x", type="number"}},
+  function(x)
+     return x+1
+  end,
+  
+  {{name="str", type="string"},
+   {name="letter", type="number"}},
+  function(str, letter)
+     return str .. string.char(letter)
+  end
+)
+
+> = inc(5)
+6
+
+> = inc("hello worl", string.byte('d'))
+hello world
+```
+
+Note that one can specify help for each function case. In fact, one can also provide a global help message,
+by adding a `help=` field in a table containing all the arguments provided to argcheck:
+```lua
+inc = argcheck{ -- note the difference here
+  help = [[Increment a number or a string.]], -- global help message
+
+  {help="Increment a number by 1",
+   {name="x", type="number"}},
+  function(x)
+     return x+1
+  end,
+  
+  {help="Add a letter to a string",
+   {name="str", type="string"},
+   {name="letter", type="number"}},
+  function(str, letter)
+     return str .. string.char(letter)
+  end
+}
+
+> = inc()
+
+Increment a number or a string.                                                                                                                
+
+Increment a number by 1
+
+> arguments:
+{
+   x = number  -- 
+}
+
+or
+
+Add a letter to a string
+
+> arguments:
+{
+   str    = string  -- 
+   letter = number  -- 
+}
+
+```
