@@ -210,7 +210,7 @@ end
 local function generateusage(argdefs)
    local txt
    if argdefs.help then
-      txt = {argdefs.help, '', '> arguments:', '{'}
+      txt = {argdefs.help, '', '> arguments:', argdefs.nonamed and '(' or '{'}
    else
       txt = {'> arguments:', argdefs.nonamed and '(' or '{'}
    end
@@ -297,8 +297,8 @@ local function argcheck__(argfuncs, ismethod)
    -- this one is going to be an upvalue for argcheck
    local err
    local usage = {'return function()', 'print[['}
-   if globalhelp then
-      table.insert(usage, globalhelp)
+   if argfuncs.help then
+      table.insert(usage, argfuncs.help)
       table.insert(usage, '')
    end
    local hlp = {}
