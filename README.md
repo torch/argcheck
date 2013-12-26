@@ -13,7 +13,7 @@ Installation
 The easiest is to use [luarocks](http://www.luarocks.org).
 
 ```sh
-luarocks build https://raw.github.com/andresy/argcheck/master/rocks/argcheck-scm-1.rockspec
+luarocks build https://raw.github.com/torch/argcheck/master/rocks/argcheck-scm-1.rockspec
 ```
 
 You can also copy the `argcheck` directory where `luajit` (or `lua`) will
