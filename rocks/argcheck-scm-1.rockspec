@@ -2,7 +2,7 @@ package = "argcheck"
 version = "scm-1"
 
 source = {
-   url = "git://github.com/andresy/argcheck.git"
+   url = "git://github.com/torch/argcheck.git"
 }
 
 description = {
@@ -11,7 +11,7 @@ description = {
    Argcheck allows you to insure arguments given to a function are correct.
    Checks are compiled beforehand, which guarantees little overheads.
    ]],
-   homepage = "https://github.com/andresy/argcheck",
+   homepage = "https://github.com/torch/argcheck",
    license = "BSD"
 }
 
