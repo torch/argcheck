@@ -2,7 +2,7 @@ local argcheck = require 'argcheck'
 local argcheckenv = getfenv(argcheck)
 
 function argcheckenv.istype(obj, typename)
-   return type(ob) == typename
+   return type(obj) == typename
 end
 
 local argtypes = argcheckenv.argtypes
