@@ -69,7 +69,11 @@ local function generateargcheck__(txt, argdefs, funcname, vars, named)
                end
                argdef.luaname = named and string.format('arg.%s', argdef.name) or string.format('select(%d, ...)', argidx)
                if argdef.check and argdef:check() then
-                  table.insert(checks, argdef:check())
+                  if argdef.opt then
+                     table.insert(checks, string.format("(type(%s) == 'nil' or %s)", argdef.luaname, argdef:check()))
+                  else
+                     table.insert(checks, argdef:check())
+                  end
                end
                if argdef.read then
                   if argdef:read() then
