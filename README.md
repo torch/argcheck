@@ -362,3 +362,22 @@ end
 ```
 
 As you can see, for a simple example like this one, the code is already not that trivial.
+
+### Advanced usage
+
+By default, `argcheck` uses the standard `type()` Lua function to determine the type of your
+arguments. In some cases, like if you are handling your own class system, you might want to
+specify how to check types. This can be simply done by overriding the `isoftype()` function
+available in the `argcheck` environment.
+```lua
+env = require 'argcheck.env' -- retrieve argcheck environement
+
+-- this is the default type function
+-- which can be overrided by the user
+function env.isoftype(obj, typename)
+   return type(obj) == typename
+end
+```
+Note that if you change the `isoftype()` function, it will *not* affect previously defined
+argument checking functions: `isoftype()` is passed as an upvalue for each created argument
+function.
