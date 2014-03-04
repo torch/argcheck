@@ -1,6 +1,6 @@
 argcheck -- http://github.com/andresy/argcheck
 
-Copyright (c) 2013 Idiap Research Institute (Ronan Collobert)
+Copyright (c) 2013-2014 Idiap Research Institute (Ronan Collobert)
 
 All rights reserved.
 
