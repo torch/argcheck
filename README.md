@@ -82,7 +82,7 @@ sure the given argument is not `nil`. If you want also to accept `nil` arguments
 [`opt` option](#argcheck.opt).
 
 ### Default arguments
-Simple argument types like `number`, `string` or `boolean` can have defaults:
+Arguments can have defaults:
 ```lua
 check = argcheck{
    {name="x", type="number", default=0}
