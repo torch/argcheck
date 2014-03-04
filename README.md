@@ -255,6 +255,36 @@ hello world
 nil
 ```
 
+### Specific per-rule check
+
+It is possible to add an extra specific checking function for a given checking
+rule, with the `check` option. This function will be called (with the corresponding argument)
+in addition to the standard type checking. This can be useful for refined argument selection:
+```lua
+check = argcheck{
+  {name="x", type="number", help="a number between one and ten",
+    check=function(x)
+            return x >= 1 and x <= 10
+          end}
+}
+
+function addfive(...)
+   local x = check(...)
+   print(string.format('%f + 5 = %f', x, x+5))
+end
+
+> addfive(3)
+3.000000 + 5 = 8.000000
+
+> addfive(11)
+stdin:2: invalid arguments
+
+arguments:
+{
+   x = number  -- a number between one and ten
+}
+```
+
 ### Named arguments
 
 Argcheck handles named argument calls. Following the previous example, both
