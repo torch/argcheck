@@ -5,7 +5,7 @@ A powerful argument checker library for your lua functions.
 
 Argcheck generates specific code for checking arguments of a function. This
 allows complex argument checking (possibly with optional values), with almost
-no overhead.
+no overhead (with LuaJIT).
 
 Installation
 ------------
