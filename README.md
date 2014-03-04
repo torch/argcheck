@@ -310,6 +310,31 @@ check = argcheck{
 ```
 Other global options are described in the following.
 
+#### Pack arguments into a table
+
+In some cases, it might be interesting to get all arguments into a
+table. This is not recommended in general, as creating a table slows down
+the checking process. However, when one was *a lot* of arguments, the
+`pack` option might be of interest. The function created by `argcheck`
+then returns a table containing all arguments with rule names as keys.
+```lua
+check = argcheck{
+   pack=true,
+   {name="x", type="number", default=0, help="the age of the captain"},
+   {name="msg", type="string", help="a message"}
+}
+
+function addfive(...)
+   local args = check(...) -- now arguments are stored in this table
+   print(string.format('%f + 5 = %f', args.x, args.x+5))
+   print(args.msg)
+end
+
+> addfive(5, 'hello world')
+5.000000 + 5 = 10.000000
+hello world
+```
+
 #### Restrict to named-only or ordered-only arguments
 
 In some very special (rare) cases, one might want to disable named calls
