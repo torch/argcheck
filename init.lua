@@ -45,8 +45,6 @@ end
 
 local function generateusage(rules)
    local txt = {}
-   table.insert(txt, 'invalid arguments')
-   table.insert(txt, '')
    if rules.help then
       table.insert(txt, rules.help)
    end
@@ -228,10 +226,16 @@ local function argcheck(rules)
          table.insert(ret, string.format('arg%d', ridx))
       end
    end
-   ret = table.concat(ret, ', ')
    if rules.pack then
-      ret = '{' .. ret .. '}'
+      ret = table.concat(ret, ', ')
+      ret = (rules.quiet and 'true, ' or '') .. '{' .. ret .. '}'
+   elseif rules.quiet then
+      table.insert(ret, 1, 'true')
+      ret = table.concat(ret, ', ')
+   else
+      ret = table.concat(ret, ', ')
    end
+
    table.insert(txt, '  local narg = select("#", ...)')
 
    if not rules.noordered then
@@ -240,12 +244,20 @@ local function argcheck(rules)
    if not rules.nonamed then
       table.insert(txt, generaterules(rules, true, not rules.noordered))
       table.insert(txt, '    else')
-      table.insert(txt, '      error(usage, 2)')
+      if rules.quiet then
+         table.insert(txt, '      return false, usage')
+      else
+         table.insert(txt, '      error(usage, 2)')
+      end
       table.insert(txt, '    end')
       table.insert(txt, string.format('    return %s', ret))
    end
    table.insert(txt, '  else')
-   table.insert(txt, '    error(usage, 2)')
+   if rules.quiet then
+         table.insert(txt, '    return false, usage')
+   else
+      table.insert(txt, '    error(usage, 2)')
+   end
    table.insert(txt, '  end')
    table.insert(txt, string.format('  return %s', ret))
    table.insert(txt, 'end')

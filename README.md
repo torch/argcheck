@@ -370,6 +370,33 @@ arguments:
 }
 ```
 
+#### Quiet
+
+If you want to handle errors yourself, you might want to make sure the
+checking function is quiet. The `quiet=true` option is here for this. If
+mentioned, the argument checker will return a boolean (`true` in case of
+success, `false` if arguments do not match rules), followed by the
+arguments (possibly packed). In case of failure `false` is followed by the
+help message.
+
+```lua
+check = argcheck{
+   quiet=true,
+   {name="x", type="number", default=0, help="the age of the captain"},
+   {name="msg", type="string", help="a message"}
+}
+
+> print(check(5, 'hello world'))
+true             5      hello world
+
+> print(check(5))
+false   arguments:
+{
+  [x   = number]  -- the age of the captain [default=0]
+   msg = string   -- a message
+}
+```
+
 #### Debug
 
 Adding `debug=true` as global option will simply dump the corresponding code
