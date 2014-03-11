@@ -201,6 +201,9 @@ local function argcheck(rules)
    -- upvalues
    table.insert(txt, 'local isoftype')
    table.insert(txt, 'local usage')
+   if rules.call then
+      table.insert(txt, 'local call')
+   end
    for ridx, rule in ipairs(rules) do
       if rule.default or rule.defaultf then
          table.insert(txt, string.format('local arg%dd', ridx))
@@ -226,14 +229,15 @@ local function argcheck(rules)
          table.insert(ret, string.format('arg%d', ridx))
       end
    end
+   ret = table.concat(ret, ', ')
    if rules.pack then
-      ret = table.concat(ret, ', ')
-      ret = (rules.quiet and 'true, ' or '') .. '{' .. ret .. '}'
-   elseif rules.quiet then
-      table.insert(ret, 1, 'true')
-      ret = table.concat(ret, ', ')
-   else
-      ret = table.concat(ret, ', ')
+      ret = '{' .. ret .. '}'
+   end
+   if rules.call then
+      ret = 'call(' .. ret .. ')'
+   end
+   if rules.quiet then
+      ret = 'true' .. (#ret > 0 and ', ' or '') .. ret
    end
 
    table.insert(txt, '  local narg = select("#", ...)')
@@ -285,6 +289,10 @@ local function argcheck(rules)
                     env.isoftype)
 
    debug.setupvalue(func, upvalue2idx(func, 'usage'), generateusage(rules))
+
+   if rules.call then
+      debug.setupvalue(func, upvalue2idx(func, 'call'), rules.call)
+   end
 
    return func
 end

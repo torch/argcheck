@@ -397,6 +397,32 @@ false   arguments:
 }
 ```
 
+#### Function call
+
+In case of success, the argument checker can call a function if
+needed. Some users might find it more convenient than calling the argument
+checker inside the function of interest. Taking back the first example, one
+could use the `call` option and rewrite it as:
+```lua
+addfive = argcheck{
+   {name="x", type="number"},
+
+   call = function(x)
+            print(string.format('%f + 5 = %f', x, x+5))
+          end
+}
+
+> addfive(5)
+5.000000 + 5 = 10.000000
+
+> addfive()
+stdin:1: arguments:
+{
+   x = number  --
+}
+```
+
+
 #### Debug
 
 Adding `debug=true` as global option will simply dump the corresponding code
