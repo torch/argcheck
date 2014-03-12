@@ -422,6 +422,112 @@ stdin:1: arguments:
 }
 ```
 
+#### Chained argchecks
+
+It is possible to chain several argchecks manually. E.g., in our example,
+if we want `addfive()` to handle the case of a number or string argument,
+one could leverage the `quiet` global option and do the following:
+```lua
+checknum = argcheck{
+   quiet=true,
+   {name="x", type="number"}
+}
+
+checkstr = argcheck{
+   quiet=true,
+   {name="str", type="string"}
+}
+
+function addfive(...)
+
+  -- first case
+  local status, x = checknum(...)
+  if status then
+    print(string.format('%f + 5 = %f', x, x+5))
+    return
+  end
+
+  -- second case
+  local status, str = checkstr(...)
+  if status then
+    print(string.format('%s .. 5 = %s', str, str .. '5'))
+    return
+  end
+
+  -- note that in case of failure with quiet, the error is returned after the status
+  print('usage:\n\n' .. x .. '\n\nor\n\n' .. str)
+  error('invalid arguments')
+end
+
+> addfive(123)
+5.000000 + 5 = 10.000000
+
+> addfive('hi')
+hi .. 5 = hi5
+
+> addfive()
+usage:
+
+arguments:
+{
+   x = number  --
+}
+
+or
+
+arguments:
+{
+   str = string  --
+}
+stdin:19: invalid arguments
+```
+
+This can however quickly become a burden, if there are many possible
+argument variations. Instead, one can use the `chain` option, which is
+supposed to be used together with `call`. The value provided to `chain`
+must be a function previously created by `argcheck`.  In that case,
+`argcheck` will make sure that in case of failure of the provided function
+in `chain`, the given argcheck will then be tried. With the `chain` option,
+`argcheck()` always return the head of the chain.
+
+If the arguments do not match any given variations, then the created
+argument checker will show a global error message, with usage summarizing
+all possibilites.
+
+The previous example is then equivalent to:
+```lua
+addfive = argcheck{
+  {name="x", type="number"},
+  call = function(x) -- called in case of success
+           print(string.format('%f + 5 = %f', x, x+5))
+         end
+}
+
+argcheck{
+  {name="str", type="string"},
+  chain = addfive, -- chained with previous one
+  call = function(str) -- called in case of success
+           print(string.format('%s .. 5 = %s', str, str .. '5'))
+         end
+}
+
+th> addfive(5)
+5.000000 + 5 = 10.000000
+th> addfive('hi')
+hi .. 5 = hi5
+th> addfive()
+stdin:1: arguments:
+{
+   x = number  --
+}
+
+or
+
+arguments:
+{
+   str = string  --
+}
+```
 
 #### Debug
 

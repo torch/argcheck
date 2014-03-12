@@ -1,4 +1,6 @@
 local env = require 'argcheck.env'
+local setupvalue = env.setupvalue
+local getupvalue = env.getupvalue
 
 -- If you are not use LuaJIT
 if not bit then
@@ -29,18 +31,6 @@ local function rule2arg(rule, aidx, named)
    else
       return string.format('select(%d, ...)', aidx)
    end
-end
-
-local function upvalue2idx(func, name)
-   local uidx = 0
-   repeat
-      uidx = uidx + 1
-      local uname = debug.getupvalue(func, uidx)
-      if uname == name then
-         return uidx
-      end
-   until uname == nil
-   error(string.format('unknown upvalue <%s>', name))
 end
 
 local function generateusage(rules)
@@ -201,6 +191,7 @@ local function argcheck(rules)
    -- upvalues
    table.insert(txt, 'local isoftype')
    table.insert(txt, 'local usage')
+   table.insert(txt, 'local chain')
    if rules.call then
       table.insert(txt, 'local call')
    end
@@ -247,6 +238,8 @@ local function argcheck(rules)
    end
    if not rules.nonamed then
       table.insert(txt, generaterules(rules, true, not rules.noordered))
+      table.insert(txt, '    elseif chain then')
+      table.insert(txt, '      return chain(...)')
       table.insert(txt, '    else')
       if rules.quiet then
          table.insert(txt, '      return false, usage')
@@ -256,6 +249,8 @@ local function argcheck(rules)
       table.insert(txt, '    end')
       table.insert(txt, string.format('    return %s', ret))
    end
+   table.insert(txt, '  elseif chain then')
+   table.insert(txt, '    return chain(...)')
    table.insert(txt, '  else')
    if rules.quiet then
          table.insert(txt, '    return false, usage')
@@ -270,7 +265,7 @@ local function argcheck(rules)
       print(table.concat(txt, '\n'))
    end
 
-   local func, err = loadstring(table.concat(txt, '\n'))
+   local func, err = loadstring(table.concat(txt, '\n'), 'argcheck')
    if not func then
       error(string.format('could not generate argument checker: %s', err))
    end
@@ -278,20 +273,44 @@ local function argcheck(rules)
 
    for ridx, rule in ipairs(rules) do
       if rule.default or rule.defaultf then
-         debug.setupvalue(func, upvalue2idx(func, string.format('arg%dd', ridx)), rule.default or rule.defaultf)
+         setupvalue(func, string.format('arg%dd', ridx), rule.default or rule.defaultf)
       end
       if rule.check then
-         debug.setupvalue(func, upvalue2idx(func, string.format('arg%dc', ridx)), rule.check)
+         setupvalue(func, string.format('arg%dc', ridx), rule.check)
       end
    end
 
-   debug.setupvalue(func, upvalue2idx(func, 'isoftype'),
-                    env.isoftype)
-
-   debug.setupvalue(func, upvalue2idx(func, 'usage'), generateusage(rules))
-
+   setupvalue(func, 'isoftype', env.isoftype)
+   setupvalue(func, 'usage', generateusage(rules))
    if rules.call then
-      debug.setupvalue(func, upvalue2idx(func, 'call'), rules.call)
+      setupvalue(func, 'call', rules.call)
+   end
+
+   if rules.chain then
+      local tail = rules.chain
+      while true do
+         local next = getupvalue(tail, 'chain')
+         if next then
+            tail = next
+         else
+            break
+         end
+      end
+      setupvalue(tail, 'chain', func)
+
+      local chainusage = {}
+      local tail = rules.chain
+      repeat
+         local usage = getupvalue(tail, 'usage')
+         if usage then
+            table.insert(chainusage, usage)
+            setupvalue(tail, 'usage', nil)
+         end
+         tail = getupvalue(tail, 'chain')
+      until not tail
+      setupvalue(func, 'usage', table.concat(chainusage, '\n\nor\n\n'))
+
+      return rules.chain
    end
 
    return func
