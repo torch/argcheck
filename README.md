@@ -34,7 +34,7 @@ luarocks install luabitop
 ```
 * * *
 
-Introduction
+Documentation
 ------------
 
 To use `argcheck`, you have to first `require` it:
@@ -45,6 +45,11 @@ In the following, we assume this has been done in your script.
 Note that `argcheck` does not import anything globally, to avoid cluttering
 the global namespace.  The value returned by the require is a function: for
 most usages, it will be the only thing you need.
+
+_Note that in the following examples we do not use local variables for
+check functions or example functions. This is bad practive, but helpful if
+you want to cut-and-paste the code in your interactive lua to see how
+this is running_
 
 The `argcheck()` function creates a fast pre-compiled function for checking
 arguments, according to rules provided by the user. Assume you have a
@@ -339,7 +344,7 @@ hello world
 
 In some very special (rare) cases, one might want to disable named calls
 like `addfive{x=1, msg='blah'}`, and stick to only ordered arguments like
-`addfive(1, 'blah'), or vice-versa. That might be to handle some ambiguous
+`addfive(1, 'blah')`, or vice-versa. That might be to handle some ambiguous
 calls, e.g. when one has to deal with table arguments. The options
 `nonamed` and `noordered` can be used for that purpose:
 
@@ -513,8 +518,10 @@ argcheck{
 
 th> addfive(5)
 5.000000 + 5 = 10.000000
+
 th> addfive('hi')
 hi .. 5 = hi5
+
 th> addfive()
 stdin:1: arguments:
 {
