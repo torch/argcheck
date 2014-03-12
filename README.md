@@ -549,26 +549,26 @@ check = argcheck{
 }
 
 -- check
-local isoftype
+local istype
 local usage
 local arg1d
 return function(...)
    local arg1 = arg1d
    local arg2
    local narg = select("#", ...)
-   if narg == 1 and isoftype(select(1, ...), "string") then
+   if narg == 1 and istype(select(1, ...), "string") then
       arg2 = select(1, ...)
-   elseif narg == 2 and isoftype(select(1, ...), "number") and isoftype(select(2, ...), "string") then
+   elseif narg == 2 and istype(select(1, ...), "number") and istype(select(2, ...), "string") then
       arg1 = select(1, ...)
       arg2 = select(2, ...)
-   elseif narg == 1 and isoftype(select(1, ...), "table") then
+   elseif narg == 1 and istype(select(1, ...), "table") then
       local arg = select(1, ...)
       local narg = 0
       if arg.x then narg = narg + 1 end
       if arg.msg then narg = narg + 1 end
-      if narg == 1 and isoftype(arg.msg, "string") then
+      if narg == 1 and istype(arg.msg, "string") then
          arg2 = arg.msg
-      elseif narg == 2 and isoftype(arg.x, "number") and isoftype(arg.msg, "string") then
+      elseif narg == 2 and istype(arg.x, "number") and istype(arg.msg, "string") then
          arg1 = arg.x
          arg2 = arg.msg
       else
@@ -588,17 +588,17 @@ As you can see, for a simple example like this one, the code is already not that
 
 By default, `argcheck` uses the standard `type()` Lua function to determine the type of your
 arguments. In some cases, like if you are handling your own class system, you might want to
-specify how to check types. This can be simply done by overriding the `isoftype()` function
+specify how to check types. This can be simply done by overriding the `istype()` function
 available in the `argcheck` environment.
 ```lua
 env = require 'argcheck.env' -- retrieve argcheck environement
 
 -- this is the default type function
 -- which can be overrided by the user
-function env.isoftype(obj, typename)
+function env.istype(obj, typename)
    return type(obj) == typename
 end
 ```
-Note that if you change the `isoftype()` function, it will *not* affect previously defined
-argument checking functions: `isoftype()` is passed as an upvalue for each created argument
+Note that if you change the `istype()` function, it will *not* affect previously defined
+argument checking functions: `istype()` is passed as an upvalue for each created argument
 function.
