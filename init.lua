@@ -1,6 +1,8 @@
 local env = require 'argcheck.env'
-local setupvalue = env.setupvalue
-local getupvalue = env.getupvalue
+local utils = require 'argcheck.utils'
+
+local setupvalue = utils.setupvalue
+local getupvalue = utils.getupvalue
 
 -- If you are not use LuaJIT
 if not bit then
