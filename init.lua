@@ -103,7 +103,7 @@ local function generaterules(rules, named, hasordered)
 
    local indent = '  '
    if named then
-      table.insert(txt, string.format('  %sif narg == 1 and isoftype(select(1, ...), "table") then', hasordered and 'else' or ''))
+      table.insert(txt, string.format('  %sif narg == 1 and istype(select(1, ...), "table") then', hasordered and 'else' or ''))
       table.insert(txt, '    local arg = select(1, ...)')
       table.insert(txt, '    local narg = 0')
       for _, rule in ipairs(rules) do
@@ -141,12 +141,12 @@ local function generaterules(rules, named, hasordered)
          if not skiprule and aidx <= narg then
             local checktxt
             if rule.opt and rule.type then
-               checktxt = string.format('(isoftype(%s, "%s") or isoftype(%s, "nil"))', rule2arg(rule, aidx, named), rule.type, rule2arg(rule, aidx, named))
+               checktxt = string.format('(istype(%s, "%s") or istype(%s, "nil"))', rule2arg(rule, aidx, named), rule.type, rule2arg(rule, aidx, named))
             elseif rule.opt and not rule.type then -- can be anything
             elseif rule.type then
-               checktxt = string.format('isoftype(%s, "%s")', rule2arg(rule, aidx, named), rule.type)
+               checktxt = string.format('istype(%s, "%s")', rule2arg(rule, aidx, named), rule.type)
             else
-               checktxt = string.format('not isoftype(%s, "nil")', rule2arg(rule, aidx, named))
+               checktxt = string.format('not istype(%s, "nil")', rule2arg(rule, aidx, named))
             end
             if rule.check then
                checktxt = string.format('%s%s%sarg%dc(%s)%s',
@@ -191,7 +191,7 @@ local function argcheck(rules)
    end
 
    -- upvalues
-   table.insert(txt, 'local isoftype')
+   table.insert(txt, 'local istype')
    table.insert(txt, 'local usage')
    table.insert(txt, 'local chain')
    if rules.call then
@@ -282,7 +282,7 @@ local function argcheck(rules)
       end
    end
 
-   setupvalue(func, 'isoftype', env.isoftype)
+   setupvalue(func, 'istype', env.istype)
    setupvalue(func, 'usage', generateusage(rules))
    if rules.call then
       setupvalue(func, 'call', rules.call)

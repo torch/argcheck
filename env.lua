@@ -1,7 +1,7 @@
 local env = {}
 
 -- user configurable function
-function env.isoftype(obj, typename)
+function env.istype(obj, typename)
    return type(obj) == typename
 end
 
