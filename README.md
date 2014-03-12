@@ -49,7 +49,7 @@ most usages, it will be the only thing you need.
 _Note that in the following examples we do not use local variables for
 check functions or example functions. This is bad practive, but helpful if
 you want to cut-and-paste the code in your interactive lua to see how
-this is running_
+this is running._
 
 The `argcheck()` function creates a fast pre-compiled function for checking
 arguments, according to rules provided by the user. Assume you have a
