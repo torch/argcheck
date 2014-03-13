@@ -40,6 +40,9 @@ local function generateusage(rules)
    if rules.help then
       table.insert(txt, rules.help)
    end
+   if rules.doc then
+      table.insert(txt, rules.doc)
+   end
    table.insert(txt, 'arguments:')
    table.insert(txt, '{')
 
@@ -73,7 +76,7 @@ local function generateusage(rules)
             default = ' [has default value]'
          end
       end
-      table.insert(hlp, (rule.help or '') .. default)
+      table.insert(hlp, (rule.help or '') .. (rule.doc or '') .. default)
    end
 
    local size = 0
@@ -181,10 +184,12 @@ local function argcheck(rules)
    -- basic checks
    assert(not (rules.noordered and rules.nonamed), 'rules must be at least ordered or named')
    assert(rules.help == nil or type(rules.help) == 'string', 'rules help must be a string or nil')
+   assert(rules.doc == nil or type(rules.doc) == 'string', 'rules doc must be a string or nil')
    for _, rule in ipairs(rules) do
       assert(rule.name, 'rule must have a name field')
       assert(rule.type == nil or type(rule.type) == 'string', 'rule type must be a string or nil')
       assert(rule.help == nil or type(rule.help) == 'string', 'rule help must be a string or nil')
+      assert(rule.doc == nil or type(rule.doc) == 'string', 'rule doc must be a string or nil')
       assert(rule.check == nil or type(rule.check) == 'function', 'rule check must be a function or nil')
       assert(rule.defaulta == nil or type(rule.defaulta) == 'string', 'rule defaulta must be a string or nil')
       assert(rule.defaultf == nil or type(rule.defaultf) == 'function', 'rule defaultf must be a function or nil')

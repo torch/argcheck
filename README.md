@@ -100,7 +100,7 @@ one to your function:
 0.000000 + 5 = 5.000000
 ```
 
-### Help
+### Help (or doc)
 Argcheck encourages you to add help to your function. You can document each argument:
 ```lua
 check = argcheck{
@@ -131,6 +131,8 @@ arguments:
    [x = number]  -- the age of the captain [default=0]
 }
 ```
+
+Note that is (equivalently) possible to use the key `doc=` instead of `help=`.
 
 ### Multiple arguments
 
@@ -305,7 +307,7 @@ arguments.
 
 ### Options global to all rules
 
-Argcheck has several interesting global options, as the `help` one we have introduced already.
+Argcheck has several interesting global options, as the `help` (or `doc`) we have introduced already.
 Those global options are simply set in the main `argcheck` table:
 ```lua
 check = argcheck{
