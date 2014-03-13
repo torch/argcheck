@@ -1,5 +1,6 @@
 local env = require 'argcheck.env'
 local utils = require 'argcheck.utils'
+local doc = require 'argcheck.doc'
 
 local setupvalue = utils.setupvalue
 local getupvalue = utils.getupvalue
@@ -288,7 +289,23 @@ local function argcheck(rules)
    end
 
    setupvalue(func, 'istype', env.istype)
-   setupvalue(func, 'usage', generateusage(rules))
+
+   -- doc
+   local usage = generateusage(rules)
+   setupvalue(func, 'usage', usage)
+   if doc.__record then
+      if doc.__args then
+         table.insert(doc.__record, usage)
+      else
+         if rules.help then
+            table.insert(doc.__record, rules.help)
+         end
+         if rules.doc then
+            table.insert(doc.__record, rules.doc)
+         end
+      end
+   end
+
    if rules.call then
       setupvalue(func, 'call', rules.call)
    end
