@@ -5,6 +5,11 @@ local doc = require 'argcheck.doc'
 local setupvalue = utils.setupvalue
 local getupvalue = utils.getupvalue
 
+local sdascii
+pcall(function()
+         sdascii = require 'sundown.ascii'
+      end)
+
 -- If you are not use LuaJIT
 if not bit then
    require 'bit'
@@ -44,8 +49,8 @@ local function generateusage(rules)
    if rules.doc then
       table.insert(txt, rules.doc)
    end
-   table.insert(txt, 'arguments:')
-   table.insert(txt, '{')
+   table.insert(txt, '*Arguments:*')
+   table.insert(txt, '```')
 
    local size = 0
    for _,rule in ipairs(rules) do
@@ -88,9 +93,15 @@ local function generateusage(rules)
    for i=1,#arg do
       table.insert(txt, string.format("  %s %s -- %s", arg[i], string.rep(' ', size-#arg[i]), hlp[i]))
    end
+   table.insert(txt, '```')
 
-   table.insert(txt, '}')
-   return table.concat(txt, '\n')
+   txt = table.concat(txt, '\n')
+
+   if sdascii then
+      txt = sdascii.render(txt)
+   end
+
+   return txt
 end
 
 local function generaterules(rules, named, hasordered)
@@ -252,7 +263,8 @@ local function argcheck(rules)
       if rules.quiet then
          table.insert(txt, '      return false, usage')
       else
-         table.insert(txt, '      error(usage, 2)')
+         table.insert(txt, '      print(usage)')
+         table.insert(txt, '      error("invalid arguments", 2)')
       end
       table.insert(txt, '    end')
       table.insert(txt, string.format('    return %s', ret))
@@ -263,7 +275,8 @@ local function argcheck(rules)
    if rules.quiet then
          table.insert(txt, '    return false, usage')
    else
-      table.insert(txt, '    error(usage, 2)')
+      table.insert(txt, '    print(usage)')
+      table.insert(txt, '    error("invalid arguments", 2)')
    end
    table.insert(txt, '  end')
    table.insert(txt, string.format('  return %s', ret))
