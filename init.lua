@@ -41,15 +41,21 @@ local function rule2arg(rule, aidx, named)
    end
 end
 
-local function generateusage(rules)
+local function generateargp(rules)
    local txt = {}
-   if rules.help then
-      table.insert(txt, rules.help)
+   for idx, rule in ipairs(rules) do
+      local isopt = rule.opt or rule.default ~= nil or rules.defauta or rule.defaultf
+      table.insert(txt,
+                   (isopt and '[' or '')
+                      .. ((idx == 1) and '' or ', ')
+                      .. rule.name
+                      .. (isopt and ']' or ''))
    end
-   if rules.doc then
-      table.insert(txt, rules.doc)
-   end
-   table.insert(txt, '*Arguments:*')
+   return table.concat(txt)
+end
+
+local function generateargt(rules)
+   local txt = {}
    table.insert(txt, '```')
 
    local size = 0
@@ -97,11 +103,33 @@ local function generateusage(rules)
 
    txt = table.concat(txt, '\n')
 
-   if sdascii then
-      txt = sdascii.render(txt)
+   return txt
+end
+
+local function generateusage(rules)
+   local doc = rules.help or rules.doc
+
+   if doc then
+      doc = doc:gsub('@ARGP',
+                     function()
+                        return generateargp(rules)
+                     end)
+
+      doc = doc:gsub('@ARGT',
+                     function()
+                        return generateargt(rules)
+                     end)
    end
 
-   return txt
+   if not doc then
+      doc = '\n*Arguments:*\n' .. generateargt(rules)
+   end
+
+   if sdascii then
+      doc = sdascii.render(doc)
+   end
+
+   return doc
 end
 
 local function generaterules(rules, named, hasordered)
@@ -197,6 +225,7 @@ local function argcheck(rules)
    assert(not (rules.noordered and rules.nonamed), 'rules must be at least ordered or named')
    assert(rules.help == nil or type(rules.help) == 'string', 'rules help must be a string or nil')
    assert(rules.doc == nil or type(rules.doc) == 'string', 'rules doc must be a string or nil')
+   assert(not (rules.doc and rules.help), 'choose between doc or help, not both')
    for _, rule in ipairs(rules) do
       assert(rule.name, 'rule must have a name field')
       assert(rule.type == nil or type(rule.type) == 'string', 'rule type must be a string or nil')
@@ -264,6 +293,7 @@ local function argcheck(rules)
          table.insert(txt, '      return false, usage')
       else
          table.insert(txt, '      print(usage)')
+         table.insert(txt, '      print()')
          table.insert(txt, '      error("invalid arguments", 2)')
       end
       table.insert(txt, '    end')
@@ -276,6 +306,7 @@ local function argcheck(rules)
          table.insert(txt, '    return false, usage')
    else
       table.insert(txt, '    print(usage)')
+      table.insert(txt, '    print()')
       table.insert(txt, '    error("invalid arguments", 2)')
    end
    table.insert(txt, '  end')
@@ -307,16 +338,7 @@ local function argcheck(rules)
    local usage = generateusage(rules)
    setupvalue(func, 'usage', usage)
    if doc.__record then
-      if doc.__args then
-         table.insert(doc.__record, usage)
-      else
-         if rules.help then
-            table.insert(doc.__record, rules.help)
-         end
-         if rules.doc then
-            table.insert(doc.__record, rules.doc)
-         end
-      end
+      table.insert(doc.__record, usage)
    end
 
    if rules.call then

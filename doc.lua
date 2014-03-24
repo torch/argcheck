@@ -1,12 +1,4 @@
-local doc = {__args=false}
-
-function doc.showargs()
-   doc.__args = true
-end
-
-function doc.hideargs()
-   doc.__args = true
-end
+local doc = {}
 
 function doc.record()
    doc.__record = {}
