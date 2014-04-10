@@ -272,11 +272,14 @@ local function argcheck(rules)
    if rules.pack then
       ret = '{' .. ret .. '}'
    end
-   if rules.call then
+   if rules.call and not rules.quiet then
       ret = 'call(' .. ret .. ')'
    end
-   if rules.quiet then
+   if rules.quiet and not rules.call then
       ret = 'true' .. (#ret > 0 and ', ' or '') .. ret
+   end
+   if rules.quiet and rules.call then
+      ret = 'call' .. (#ret > 0 and ', ' or '') .. ret
    end
 
    table.insert(txt, '  local narg = select("#", ...)')
