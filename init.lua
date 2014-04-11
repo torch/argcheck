@@ -173,7 +173,7 @@ local function generaterules(rules, named, hasordered)
 
          if rule.default or rule.defaulta or rule.defaultf or rule.opt then
             optidx = optidx + 1
-            if bit.band(optidx, optmask) == 0 then
+            if bit.band(2^(optidx-1), optmask) == 0 then
                if rule.defaulta then
                   table.insert(defatxt, string.format('%s  arg%d = arg%d', indent, ridx, argname2idx(rules, rule.defaulta)))
                end
@@ -181,7 +181,7 @@ local function generaterules(rules, named, hasordered)
             end
          end
          
-         if not skiprule and aidx <= narg then
+         if not skiprule then
             local checktxt
             if rule.opt and rule.type then
                checktxt = string.format('(istype(%s, "%s") or istype(%s, "nil"))', rule2arg(rule, aidx, named), rule.type, rule2arg(rule, aidx, named))
