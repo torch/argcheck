@@ -138,7 +138,7 @@ local function generaterules(rules, named, hasordered)
    local nopt = 0   
    local nrule = 0
    for _, rule in ipairs(rules) do
-      if rule.default or rule.defaulta or rule.defaultf or rule.opt then
+      if rule.default ~= nil or rule.defaulta or rule.defaultf or rule.opt then
          nopt = nopt + 1
       end
       nrule = nrule + 1
@@ -171,7 +171,7 @@ local function generaterules(rules, named, hasordered)
          local rule = rules[ridx]
          local skiprule = false
 
-         if rule.default or rule.defaulta or rule.defaultf or rule.opt then
+         if rule.default ~= nil or rule.defaulta or rule.defaultf or rule.opt then
             optidx = optidx + 1
             if bit.band(2^(optidx-1), optmask) == 0 then
                if rule.defaulta then
@@ -244,7 +244,7 @@ local function argcheck(rules)
       table.insert(txt, 'local call')
    end
    for ridx, rule in ipairs(rules) do
-      if rule.default or rule.defaultf then
+      if rule.default ~= nil or rule.defaultf then
          table.insert(txt, string.format('local arg%dd', ridx))
       end
       if rule.check then
@@ -255,7 +255,7 @@ local function argcheck(rules)
    table.insert(txt, 'return function(...)')
    local ret = {}
    for ridx, rule in ipairs(rules) do
-      if rule.default then
+      if rule.default ~= nil then
          table.insert(txt, string.format('  local arg%d = arg%dd', ridx, ridx))
       elseif rule.defaultf then
          table.insert(txt, string.format('  local arg%d = arg%dd()', ridx, ridx))
@@ -327,7 +327,7 @@ local function argcheck(rules)
    func = func()
 
    for ridx, rule in ipairs(rules) do
-      if rule.default or rule.defaultf then
+      if rule.default ~= nil or rule.defaultf then
          setupvalue(func, string.format('arg%dd', ridx), rule.default or rule.defaultf)
       end
       if rule.check then
