@@ -1,5 +1,3 @@
-local env = require 'argcheck.env'
-
 local function argname2idx(rules, name)
    for idx, rule in ipairs(rules) do
       if rule.name == name then
@@ -219,10 +217,10 @@ else
       end
    end
 
-   function ACN:generate(depth, upvalues)
+   function ACN:generate(upvalues, depth)
+      assert(upvalues, 'upvalues table missing')
       local code = {}
       depth = depth or 0
-      upvalues = upvalues or {istype=env.istype}
 
       if depth == 0 then
          table.insert(code, 'return function(...)')
@@ -292,7 +290,7 @@ else
          table.insert(code, string.format('  %send', string.rep('  ', depth)))
       end
       for i=1,self.n do
-         table.insert(code, self.next[i]:generate(depth+1, upvalues))
+         table.insert(code, self.next[i]:generate(upvalues, depth+1))
       end
 
       if depth == 0 then
