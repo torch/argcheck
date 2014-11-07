@@ -135,11 +135,12 @@ else
 
    local ACN = {}
    
-   function ACN.new(typename, check, rules, rulemask)
+   function ACN.new(typename, name, check, rules, rulemask)
       assert(typename)
       local self = {}
       setmetatable(self, {__index=ACN})
       self.type = typename
+      self.name = name
       self.check = check
       self.rules = rules
       self.rulemask = rulemask
@@ -153,14 +154,16 @@ else
       self.n = self.n + 1
    end
 
-   function ACN:match(rules, rulemask)
+   function ACN:match(rules, rulemask, named)
       local head = self
       local nmatched = 0
       for _,idx in ipairs(rulemask) do
          local rule = rules[idx]
          local matched = false
          for n=1,head.n do
-            if head.next[n].type == rule.type and head.next[n].check == rule.check then
+            if head.next[n].type == rule.type
+            and head.next[n].check == rule.check
+            and (not named or (named and head.next[n].name == rule.name)) then
                head = head.next[n]
                nmatched = nmatched + 1
                matched = true
@@ -174,15 +177,19 @@ else
       return head, nmatched
    end
 
-   function ACN:addpath(rules, rulemask)
+   function ACN:addpath(rules, rulemask, named)
       if #rulemask == 0 then
          self.rules = self.rules or rules
          self.rulemask = self.rulemask or rulemask
       else
-         local head, n = self:match(rules, rulemask)
+         local head, n = self:match(rules, rulemask, named)
          for n=n+1,#rulemask do
             local rule = rules[rulemask[n]]
-            local node = ACN.new(rule.type, rule.check, n == #rulemask and rules or nil, n == #rulemask and rulemask or nil)
+            local node = ACN.new(rule.type,
+                                 named and rule.name or nil,
+                                 rule.check,
+                                 n == #rulemask and rules or nil,
+                                 n == #rulemask and rulemask or nil)
             head:add(node)
             head = node
          end
@@ -196,10 +203,11 @@ else
    function ACN:print(txt)
       local isroot = not txt
       txt = txt or {'digraph ACN {'}
-      table.insert(txt, string.format('id%s [label="%s%s" style=filled fillcolor=%s];',
+      table.insert(txt, string.format('id%s [label="%s%s (%s)" style=filled fillcolor=%s];',
                                       self:id(),
                                       self.type,
                                       self.check and '<check>' or '',
+                                      self.name,
                                       self.rules and 'red' or 'blue'))
       
       for n=1,self.n do
@@ -217,17 +225,25 @@ else
       end
    end
 
-   function ACN:generate(upvalues, depth)
-      assert(upvalues, 'upvalues table missing')
-      local code = {}
+   function ACN:generate_ordered_or_named(code, upvalues, named, depth)
       depth = depth or 0
 
       if depth == 0 then
-         table.insert(code, 'return function(...)')
-         table.insert(code, '  local narg = select("#", ...)')
+         if named then
+            table.insert(code, '  if narg == 1 and istype(select(1, ...), "table") then')
+            table.insert(code, '    local args = select(1, ...)')
+            table.insert(code, '    local narg = 0')
+            table.insert(code, '    for k,v in pairs(args) do')
+            table.insert(code, '      narg = narg + 1')
+            table.insert(code, '    end')
+         end
       else
          -- DEBUG: check() is missing
-         table.insert(code, string.format('%sif narg >= %d and istype(select(%d, ...), "%s") then', string.rep('  ', depth), depth, depth, self.type))
+         table.insert(code, string.format('%sif narg >= %d and istype(%s, "%s") then',
+                                          string.rep('  ', depth),
+                                          depth,
+                                          named and string.format('args.%s', self.name) or string.format('select(%d, ...)', depth),
+                                          self.type))
       end
 
       if self.rules then
@@ -237,7 +253,7 @@ else
          local argcode = {}
          local defacode = {}
          for ridx, rule in ipairs(rules) do
-            table.insert(argcode, string.format('arg%d', ridx))
+--            table.insert(argcode, string.format('arg%d', ridx))
             if rules.pack then
                table.insert(argcode, string.format('%s=arg%d', rule.name, ridx))
             else
@@ -252,7 +268,10 @@ else
                end
             end
             if argidx then
-               table.insert(code, string.format('    %slocal arg%d = select(..., %d)', string.rep('  ', depth), ridx, argidx))
+               table.insert(code, string.format('    %slocal arg%d = %s',
+                                                string.rep('  ', depth),
+                                                ridx,
+                                                named and string.format('args.%s', rules[ridx].name) or string.format('select(%d, ...)', argidx)))
             else
                if rule.default then
                   table.insert(code, string.format('    %slocal arg%d = arg%s_%dd', string.rep('  ', depth), ridx, id, ridx))
@@ -289,20 +308,36 @@ else
          table.insert(code, string.format('    %sreturn %s', string.rep('  ', depth), argcode))
          table.insert(code, string.format('  %send', string.rep('  ', depth)))
       end
+
       for i=1,self.n do
-         table.insert(code, self.next[i]:generate(upvalues, depth+1))
+         if (named and self.next[i].name)
+         or (not named and not self.next[i].name) then
+            self.next[i]:generate_ordered_or_named(code, upvalues, named, depth+1)
+         end
       end
 
       if depth == 0 then
-         for upvaluename, upvalue in pairs(upvalues) do
-            table.insert(code, 1, string.format('local %s', upvaluename))
+         if named then
+            table.insert(code, '  end')
          end
-         table.insert(code, '  error("invalid arguments")')
-         table.insert(code, 'end')
       else
          table.insert(code, string.format('%send', string.rep('  ', depth)))
       end
 
+   end
+
+   function ACN:generate(upvalues)
+      assert(upvalues, 'upvalues table missing')
+      local code = {}
+      table.insert(code, 'return function(...)')
+      table.insert(code, '  local narg = select("#", ...)')
+      self:generate_ordered_or_named(code, upvalues, false)
+      self:generate_ordered_or_named(code, upvalues, true)
+      for upvaluename, upvalue in pairs(upvalues) do
+         table.insert(code, 1, string.format('local %s', upvaluename))
+      end
+      table.insert(code, '  error("invalid arguments")')
+      table.insert(code, 'end')
       return table.concat(code, '\n')
    end
 

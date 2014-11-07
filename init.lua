@@ -129,7 +129,7 @@ local function generateusage(rules)
    return doc
 end
 
-local function generaterules(rules, named, hasordered)
+local function generaterules(rules)
 
    local nopt = 0   
    local nrule = 0
@@ -164,7 +164,14 @@ local function generaterules(rules, named, hasordered)
             
          ridx = ridx + 1
       end
-      root:addpath(rules, rulemask)
+
+      if not rules.noordered then
+         root:addpath(rules, rulemask)
+      end
+
+      if not rules.nonamed then
+         root:addpath(rules, rulemask, true)
+      end
    end
 
    local code = root:generate(upvalues)
@@ -194,11 +201,6 @@ local function argcheck(rules)
       assert(rule.defaulta == nil or type(rule.defaulta) == 'string', 'rule defaulta must be a string or nil')
       assert(rule.defaultf == nil or type(rule.defaultf) == 'function', 'rule defaultf must be a function or nil')
    end
-
-   -- if not rules.noordered then
-   --    table.insert(txt, generaterules(rules, false, not rules.noordered))
-   -- end
-   -- if not rules.nonamed then
 
    local code, upvalues = generaterules(rules)
    print(code)
