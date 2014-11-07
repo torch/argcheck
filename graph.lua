@@ -12,6 +12,11 @@ local function table2id(tbl)
    return tostring(tbl):match('0x([^%s]+)')
 end
 
+local function func2id(func)
+   -- DEBUG: gros hack de misere
+   return tostring(func):match('0x([^%s]+)')
+end
+
 local ACN = {}
 
 function ACN.new(typename, name, check, rules, rulemask)
@@ -117,12 +122,16 @@ function ACN:generate_ordered_or_named(code, upvalues, named, depth)
          table.insert(code, '    end')
       end
    else
-      -- DEBUG: check() is missing
-      table.insert(code, string.format('%sif narg >= %d and istype(%s, "%s") then',
+      local argname = named and string.format('args.%s', self.name) or string.format('select(%d, ...)', depth)
+      if self.check then
+         upvalues[string.format('check%s', func2id(self.check))] = self.check
+      end
+      table.insert(code, string.format('%sif narg >= %d and istype(%s, "%s")%s then',
                                        string.rep('  ', depth),
                                        depth,
-                                       named and string.format('args.%s', self.name) or string.format('select(%d, ...)', depth),
-                                       self.type))
+                                       argname,
+                                       self.type,
+                                       self.check and string.format(' and check%s(%s)', func2id(self.check), argname) or ''))
    end
 
    if self.rules then
@@ -132,7 +141,6 @@ function ACN:generate_ordered_or_named(code, upvalues, named, depth)
       local argcode = {}
       local defacode = {}
       for ridx, rule in ipairs(rules) do
-         --            table.insert(argcode, string.format('arg%d', ridx))
          if rules.pack then
             table.insert(argcode, string.format('%s=arg%d', rule.name, ridx))
          else
