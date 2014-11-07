@@ -205,6 +205,15 @@ function ACN:generate_ordered_or_named(code, upvalues, named, depth)
 
 end
 
+function ACN:apply(func)
+   if self.rules then
+      func(self.rules)
+   end
+   for i=1,self.n do
+      self.next[i]:apply(func)
+   end
+end
+
 function ACN:generate(upvalues)
    assert(upvalues, 'upvalues table missing')
    local code = {}
@@ -215,8 +224,22 @@ function ACN:generate(upvalues)
    for upvaluename, upvalue in pairs(upvalues) do
       table.insert(code, 1, string.format('local %s', upvaluename))
    end
-   table.insert(code, '  error("invalid arguments")')
+
    table.insert(code, '  assert(graph)') -- keep graph as an upvalue
+
+   local quiet = true
+   self:apply(
+      function(rules)
+         if not rules.quiet then
+            quiet = false
+         end
+      end
+   )
+   if quiet then
+      table.insert(code, '  return false, "<err msg>"')
+   else
+      table.insert(code, '  error("invalid arguments")')
+   end
    table.insert(code, 'end')
    return table.concat(code, '\n')
 end
