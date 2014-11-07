@@ -140,8 +140,13 @@ local function generaterules(rules)
       nrule = nrule + 1
    end
 
-   local root = ACN.new('ROOT')
-   local upvalues = {istype=env.istype}
+   local graph
+   if rules.chain or rules.overload then
+      graph = getupvalue(rules.chain or rules.overload, 'graph')
+   else
+      graph = ACN.new('GRAPH')
+   end
+   local upvalues = {istype=env.istype, graph=graph}
 
    for optmask=0,2^nopt-1 do
       local rulemask = {}
@@ -166,17 +171,17 @@ local function generaterules(rules)
       end
 
       if not rules.noordered then
-         root:addpath(rules, rulemask)
+         graph:addpath(rules, rulemask)
       end
 
       if not rules.nonamed then
-         root:addpath(rules, rulemask, true)
+         graph:addpath(rules, rulemask, true)
       end
    end
 
-   local code = root:generate(upvalues)
+   local code = graph:generate(upvalues)
 
-   local stuff = root:print()
+   local stuff = graph:print()
    f = io.open('zozo.dot', 'w')
    f:write(stuff)
    f:close()
@@ -191,6 +196,9 @@ local function argcheck(rules)
    assert(not (rules.noordered and rules.nonamed), 'rules must be at least ordered or named')
    assert(rules.help == nil or type(rules.help) == 'string', 'rules help must be a string or nil')
    assert(rules.doc == nil or type(rules.doc) == 'string', 'rules doc must be a string or nil')
+   assert(rules.chain == nil or type(rules.chain) == 'function', 'rules chain must be a function or nil')
+   assert(rules.overload == nil or type(rules.overload) == 'function', 'rules overload must be a function or nil')
+   assert(not (rules.chain and rules.overload), 'rules must have either overload [or chain (deprecated)]')
    assert(not (rules.doc and rules.help), 'choose between doc or help, not both')
    for _, rule in ipairs(rules) do
       assert(rule.name, 'rule must have a name field')

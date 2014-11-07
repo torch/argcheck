@@ -216,6 +216,7 @@ function ACN:generate(upvalues)
       table.insert(code, 1, string.format('local %s', upvaluename))
    end
    table.insert(code, '  error("invalid arguments")')
+   table.insert(code, '  assert(graph)') -- keep graph as an upvalue
    table.insert(code, 'end')
    return table.concat(code, '\n')
 end
