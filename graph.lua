@@ -152,7 +152,7 @@ function ACN:generate_ordered_or_named(code, upvalues, named, depth)
                                              ridx,
                                              named and string.format('args.%s', rules[ridx].name) or string.format('select(%d, ...)', argidx)))
          else
-            if rule.default then
+            if rule.default ~= nil then
                table.insert(code, string.format('    %slocal arg%d = arg%s_%dd', string.rep('  ', depth), ridx, id, ridx))
                upvalues[string.format('arg%s_%dd', id, ridx)] = rule.default
             elseif rule.defaultf then
