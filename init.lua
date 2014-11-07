@@ -5,6 +5,7 @@ local ACN = require 'argcheck.graph'
 
 local setupvalue = utils.setupvalue
 local getupvalue = utils.getupvalue
+local loadstring = loadstring or load
 
 local sdascii
 pcall(function()
@@ -13,7 +14,11 @@ pcall(function()
 
 -- If you are not use LuaJIT
 if not bit then
-   require 'bit'
+   if _VERSION == "Lua 5.2" then
+      require 'bit32'
+   else
+      require 'bit'
+   end
 end
 
 local function countbits(n)
