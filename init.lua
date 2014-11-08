@@ -142,9 +142,13 @@ local function generaterules(rules)
 
    local graph
    if rules.chain or rules.overload then
-      graph = getupvalue(rules.chain or rules.overload, 'graph')
+      local status
+      status, graph = pcall(getupvalue, rules.chain or rules.overload, 'graph')
+      if not status then
+         error('trying to overload a non-argcheck function')
+      end
    else
-      graph = ACN.new('GRAPH')
+      graph = ACN.new('@')
    end
    local upvalues = {istype=env.istype, graph=graph}
 
@@ -181,11 +185,6 @@ local function generaterules(rules)
 
    local code = graph:generate(upvalues)
 
-   local stuff = graph:print()
-   f = io.open('zozo.dot', 'w')
-   f:write(stuff)
-   f:close()
-
    return code, upvalues
 
 end
@@ -211,7 +210,9 @@ local function argcheck(rules)
    end
 
    local code, upvalues = generaterules(rules)
-   print(code)
+   if rules.debug then
+      print(code)
+   end
    local func, err = loadstring(code, 'argcheck')
    if not func then
       error(string.format('could not generate argument checker: %s', err))
@@ -222,7 +223,11 @@ local function argcheck(rules)
       setupvalue(func, upvaluename, upvalue)
    end
 
-   return func
+   if rules.debug then
+      return func, upvalues.graph:print()
+   else
+      return func
+   end
 end
 
 env.argcheck = argcheck
