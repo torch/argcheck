@@ -93,8 +93,8 @@ function ACN:addpath(rules, rulemask, named)
       if not rules.force and head.rules and rules ~= head.rules then
          error('argcheck rules led to ambiguous situations')
       end
-      self.rules = rules
-      self.rulemask = rulemask
+      head.rules = rules
+      head.rulemask = rulemask
    end
    for n=n+1,#rulemask do
       local rule = rules[rulemask[n]]
