@@ -113,12 +113,13 @@ end
 function ACN:print(txt)
    local isroot = not txt
    txt = txt or {'digraph ACN {'}
-   table.insert(txt, string.format('id%s [label="%s%s (%s)" style=filled fillcolor=%s];',
+   table.insert(txt, 'edge [penwidth=.3 arrowsize=0.8];')
+   table.insert(txt, string.format('id%s [label="%s%s%s" penwidth=.1 fontsize=10 style=filled fillcolor="%s"];',
                                    self:id(),
                                    self.type,
-                                   self.check and '<check>' or '',
-                                   self.name,
-                                   self.rules and 'red' or 'blue'))
+                                   self.check and ' <check>' or '',
+                                   self.name and string.format(' (%s)', self.name) or '',
+                                   self.rules and '#aaaaaa' or '#eeeeee'))
 
    for n=1,self.n do
       local next = self.next[n]
