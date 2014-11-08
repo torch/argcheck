@@ -1,11 +1,13 @@
 argcheck
 ========
 
-A powerful argument checker library for your lua functions.
+A powerful function argument checker and function overloading library for your Lua.
 
 Argcheck generates specific code for checking arguments of a function. This
-allows complex argument checking (possibly with optional values), with almost
-no overhead (with LuaJIT).
+allows complex argument checking (possibly with optional values), with
+almost no overhead (with [LuaJIT](http://luajit.org)). Argcheck computes a
+tree of all possible variants of arguments, allowing efficient overloading
+and default argument management.
 
 Installation
 ------------
@@ -302,8 +304,8 @@ and
 ```lua
 addfive{x=1, msg="hello world"}
 ```
-are valid. However, ordered arguments are handled *much faster* than named
-arguments.
+are valid. However, ordered arguments are handled *much faster* (especially
+with LuaJIT) than named arguments.
 
 ### Options global to all rules
 
@@ -429,9 +431,9 @@ stdin:1: arguments:
 }
 ```
 
-#### Chained argchecks
+#### Overloading
 
-It is possible to chain several argchecks manually. E.g., in our example,
+It is possible to overload previous created argchecks manually. E.g., in our example,
 if we want `addfive()` to handle the case of a number or string argument,
 one could leverage the `quiet` global option and do the following:
 ```lua
@@ -490,16 +492,17 @@ stdin:19: invalid arguments
 ```
 
 This can however quickly become a burden, if there are many possible
-argument variations. Instead, one can use the `chain` option, which is
-supposed to be used together with `call`. The value provided to `chain`
-must be a function previously created by `argcheck`.  In that case,
-`argcheck` will make sure that in case of failure of the provided function
-in `chain`, the given argcheck will then be tried. With the `chain` option,
-`argcheck()` always return the head of the chain.
+argument variations. Instead, one can use the `overload` option, which is
+supposed to be used together with `call`. The value provided to `overload`
+must be a function previously created by `argcheck`.
 
 If the arguments do not match any given variations, then the created
 argument checker will show a global error message, with usage summarizing
 all possibilites.
+
+When overloading, `argcheck` will create a new function (for efficiency
+reasons) including all possible cases which are being overloaded, as well
+as the new given case. _Beware_ to overwrite the returned `argcheck` function!
 
 The previous example is then equivalent to:
 ```lua
@@ -510,9 +513,9 @@ addfive = argcheck{
          end
 }
 
-argcheck{
+addfive = argcheck{ -- overwrite it
   {name="str", type="string"},
-  chain = addfive, -- chained with previous one
+  overload = addfive, -- overload the previous one
   call = function(str) -- called in case of success
            print(string.format('%s .. 5 = %s', str, str .. '5'))
          end
@@ -538,53 +541,148 @@ arguments:
 }
 ```
 
+#### Force
+
+`argcheck` hates ambiguities, and will spit out an error message if you try
+to create some rules which are ambiguous. This can in fact happen easily
+when overloading, or when mixing named/ordered arguments.
+
+For example:
+```lua
+addfive = argcheck{
+   {name="x", type="number"},
+   call =
+      function(x) -- called in case of success
+         print(string.format('%f + 5 = %f', x, x+5))
+      end
+}
+
+addfive = argcheck{
+   {name="x", type="number"},
+   {name="msg", type="string", default="i know what i am doing"},
+   overload = addfive,
+   call =
+      function(x, msg) -- called in case of success
+         print(string.format('%f + 5 = %f [msg = %s]', x, x+5, msg))
+      end
+}
+```
+
+will led to the error message "argcheck rules led to ambiguous
+situations". One can override this behavior, with the `force` flag:
+```lua
+addfive = argcheck{
+   {name="x", type="number"},
+   {name="msg", type="string", default="i know what i am doing"},
+   overload = addfive,
+   force = true,
+   call =
+      function(x, msg) -- called in case of success
+         print(string.format('%f + 5 = %f [msg = %s]', x, x+5, msg))
+      end
+}
+```
+In this case, consider the subsequent calls:
+```lua
+> addfive(5, 'hello')
+5.000000 + 5 = 10.000000 [msg = hello]
+> addfive(5)
+5.000000 + 5 = 10.000000 [msg = i know what i am doing]
+```
+Note that the first function is then never called (you know what you are doing!).
+
 #### Debug
 
-Adding `debug=true` as global option will simply dump the corresponding code
-for the given checking argument function.
+Adding `debug=true` as global option will simply dump in stdout the
+corresponding code for the given checking argument function. It will also
+return a [dot graph](http://www.graphviz.org), for better understanding of
+what is going on.
 
 ```lua
-check = argcheck{
+check, dotgraph = argcheck{
    debug=true,
    {name="x", type="number", default=0, help="the age of the captain"},
    {name="msg", type="string", help="a message"}
 }
 
--- check
+local arg01868630_1d
 local istype
-local usage
-local arg1d
+local graph
 return function(...)
-   local arg1 = arg1d
-   local arg2
-   local narg = select("#", ...)
-   if narg == 1 and istype(select(1, ...), "string") then
-      arg2 = select(1, ...)
-   elseif narg == 2 and istype(select(1, ...), "number") and istype(select(2, ...), "string") then
-      arg1 = select(1, ...)
-      arg2 = select(2, ...)
-   elseif narg == 1 and istype(select(1, ...), "table") then
-      local arg = select(1, ...)
-      local narg = 0
-      if arg.x then narg = narg + 1 end
-      if arg.msg then narg = narg + 1 end
-      if narg == 1 and istype(arg.msg, "string") then
-         arg2 = arg.msg
-      elseif narg == 2 and istype(arg.x, "number") and istype(arg.msg, "string") then
-         arg1 = arg.x
-         arg2 = arg.msg
-      else
-         error(usage, 2)
-      end
-      return arg1, arg2
-   else
-      error(usage, 2)
-   end
-   return arg1, arg2
+  local narg = select("#", ...)
+  if narg >= 1 and istype(select(1, ...), "string") then
+     if narg == 1 then
+        local arg1 = arg01868630_1d
+        local arg2 = select(1, ...)
+        return arg1, arg2
+     end
+  end
+  if narg >= 1 and istype(select(1, ...), "number") then
+     if narg >= 2 and istype(select(2, ...), "string") then
+        if narg == 2 then
+           local arg1 = select(1, ...)
+           local arg2 = select(2, ...)
+           return arg1, arg2
+        end
+     end
+  end
+  if narg == 1 and istype(select(1, ...), "table") then
+     local args = select(1, ...)
+     local narg = 0
+     for k,v in pairs(args) do
+        narg = narg + 1
+     end
+     if narg >= 1 and istype(args.msg, "string") then
+        if narg == 1 then
+           local arg1 = arg01868630_1d
+           local arg2 = args.msg
+           return arg1, arg2
+        end
+     end
+     if narg >= 1 and istype(args.x, "number") then
+        if narg >= 2 and istype(args.msg, "string") then
+           if narg == 2 then
+              local arg1 = args.x
+              local arg2 = args.msg
+              return arg1, arg2
+           end
+        end
+     end
+  end
+  assert(graph)
+  error(string.format("%s\ninvalid arguments!", graph:usage()))
 end
+
+> print(dotgraph)
+digraph ACN {
+edge [penwidth=.3 arrowsize=0.8];
+id0dcfe350 [label="@" penwidth=.1 fontsize=10 style=filled fillcolor="#eeeeee"];
+edge [penwidth=.3 arrowsize=0.8];
+id0dcfd8d8 [label="string" penwidth=.1 fontsize=10 style=filled fillcolor="#aaaaaa"];
+id0dcfe350 -> id0dcfd8d8;
+edge [penwidth=.3 arrowsize=0.8];
+id0dcfdb50 [label="string (msg)" penwidth=.1 fontsize=10 style=filled fillcolor="#aaaaaa"];
+id0dcfe350 -> id0dcfdb50;
+edge [penwidth=.3 arrowsize=0.8];
+id0dcfddb0 [label="number" penwidth=.1 fontsize=10 style=filled fillcolor="#eeeeee"];
+edge [penwidth=.3 arrowsize=0.8];
+id0dcfd9c0 [label="string" penwidth=.1 fontsize=10 style=filled fillcolor="#aaaaaa"];
+id0dcfddb0 -> id0dcfd9c0;
+id0dcfe350 -> id0dcfddb0;
+edge [penwidth=.3 arrowsize=0.8];
+id0dcfe978 [label="number (x)" penwidth=.1 fontsize=10 style=filled fillcolor="#eeeeee"];
+edge [penwidth=.3 arrowsize=0.8];
+id0dcfeb68 [label="string (msg)" penwidth=.1 fontsize=10 style=filled fillcolor="#aaaaaa"];
+id0dcfe978 -> id0dcfeb68;
+id0dcfe350 -> id0dcfe978;
+}
 ```
 
-As you can see, for a simple example like this one, the code is already not that trivial.
+As you can see, for a simple example like this one, the code is already not
+that trivial, but handles both named and ordered arguments. Generating an image out of the graph
+with dot (e.g. with `dot -Tpng`), leads to the following:
+![](doc/tree.png)
+Nodes with `(...)` are nodes corresponding to named arguments.
 
 ### Advanced usage
 
