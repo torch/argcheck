@@ -1,11 +1,12 @@
 argcheck
 ========
 
-A powerful function argument checker and function overloading library for your Lua.
+A powerful function argument checker and function overloading system for
+Lua or LuaJIT.
 
 Argcheck generates specific code for checking arguments of a function. This
 allows complex argument checking (possibly with optional values), with
-almost no overhead (with [LuaJIT](http://luajit.org)). Argcheck computes a
+little overhead (with [LuaJIT](http://luajit.org)). Argcheck computes a
 tree of all possible variants of arguments, allowing efficient overloading
 and default argument management.
 
@@ -29,8 +30,8 @@ find it.
 * * *
 
 Note: argcheck requires a `bit` library. If you are not using `luajit` (you
-are seriously encouraged to switch to it), please install first the
-`luabitop` library or `bitlib`:
+are seriously encouraged to switch to it) nor lua 5.2 (which ships with
+`bit32` library), please install first the `luabitop` library or `bitlib`:
 ```sh
 luarocks install luabitop
 ```
@@ -304,8 +305,8 @@ and
 ```lua
 addfive{x=1, msg="hello world"}
 ```
-are valid. However, ordered arguments are handled *much faster* (especially
-with LuaJIT) than named arguments.
+are valid. However, ordered arguments are handled in a *much faster* way
+(especially with LuaJIT) than named arguments.
 
 ### Options global to all rules
 
@@ -502,7 +503,8 @@ all possibilites.
 
 When overloading, `argcheck` will create a new function (for efficiency
 reasons) including all possible cases which are being overloaded, as well
-as the new given case. _Beware_ to overwrite the returned `argcheck` function!
+as the new given case. _Beware_ to overwrite the returned `argcheck`
+function each time you overload one!
 
 The previous example is then equivalent to:
 ```lua
@@ -679,9 +681,12 @@ id0dcfe350 -> id0dcfe978;
 ```
 
 As you can see, for a simple example like this one, the code is already not
-that trivial, but handles both named and ordered arguments. Generating an image out of the graph
-with dot (e.g. with `dot -Tpng`), leads to the following:
+that trivial, but handles both named and ordered arguments. Generating an
+image out of the graph with dot (e.g. with `dot -Tpng`), leads to the
+following:
+
 ![](doc/tree.png)
+
 Nodes with `(...)` are nodes corresponding to named arguments.
 
 ### Advanced usage
