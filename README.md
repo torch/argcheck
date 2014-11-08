@@ -687,7 +687,8 @@ following:
 
 ![](doc/tree.png)
 
-Nodes with `(...)` are nodes corresponding to named arguments.
+Nodes with `(...)` are nodes corresponding to named arguments. Dark gray
+nodes represent valid paths in the graph.
 
 ### Advanced usage
 
