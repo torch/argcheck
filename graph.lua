@@ -85,36 +85,24 @@ function ACN:addpath(rules, rulemask, named)
       end
    end
 
-   if #rulemask == 0 then -- the no argument case
-      if not rules.force and self.rules then
-         if rules ~= self.rules then
-            error('argcheck rules led to ambiguous situations')
-         end
+   local head, n = self:match(rules, rulemask, named)
+   if n == #rulemask then
+      -- check we are not overwriting something here
+      if not rules.force and head.rules and rules ~= head.rules then
+         error('argcheck rules led to ambiguous situations')
       end
       self.rules = rules
       self.rulemask = rulemask
-   else
-      local head, n = self:match(rules, rulemask, named)
-      if n == #rulemask and head.rules then
-         if rules ~= head.rules then
-            if rules.force then
-               self.rules = rules
-               self.rulemask = rulemask
-            else
-               error('argcheck rules led to ambiguous situations')
-            end
-         end
-      end
-      for n=n+1,#rulemask do
-         local rule = rules[rulemask[n]]
-         local node = ACN.new(rule.type,
-                              named and rule.name or nil,
-                              rule.check,
-                              n == #rulemask and rules or nil,
-                              n == #rulemask and rulemask or nil)
-         head:add(node)
-         head = node
-      end
+   end
+   for n=n+1,#rulemask do
+      local rule = rules[rulemask[n]]
+      local node = ACN.new(rule.type,
+                           named and rule.name or nil,
+                           rule.check,
+                           n == #rulemask and rules or nil,
+                           n == #rulemask and rulemask or nil)
+      head:add(node)
+      head = node
    end
 end
 
