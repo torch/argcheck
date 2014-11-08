@@ -62,11 +62,49 @@ function ACN:match(rules, rulemask, named)
 end
 
 function ACN:addpath(rules, rulemask, named)
-   if #rulemask == 0 then
-      self.rules = self.rules or rules
-      self.rulemask = self.rulemask or rulemask
+
+   -- check the corner case where one has named
+   -- and ordered arguments, and ordered
+   -- can take a single table
+   if not rules.force and named then -- named
+      local noordered = true -- do we have ordered?
+      self:apply(function(rules)
+                    if not rules.noordered then
+                       noordered = false
+                    end
+                 end)
+
+      if not noordered then -- if yes then beware
+         for n=1,self.n do
+            if self.next[n].type == 'table'
+               and not self.next[n].check
+            and self.next[n].rules then
+               error('argcheck rules led to ambiguous situations')
+            end
+         end
+      end
+   end
+
+   if #rulemask == 0 then -- the no argument case
+      if not rules.force and self.rules then
+         if rules ~= self.rules then
+            error('argcheck rules led to ambiguous situations')
+         end
+      end
+      self.rules = rules
+      self.rulemask = rulemask
    else
       local head, n = self:match(rules, rulemask, named)
+      if n == #rulemask and head.rules then
+         if rules ~= head.rules then
+            if rules.force then
+               self.rules = rules
+               self.rulemask = rulemask
+            else
+               error('argcheck rules led to ambiguous situations')
+            end
+         end
+      end
       for n=n+1,#rulemask do
          local rule = rules[rulemask[n]]
          local node = ACN.new(rule.type,
