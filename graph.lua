@@ -1,3 +1,5 @@
+local usage = require 'argcheck.usage'
+
 local function argname2idx(rules, name)
    for idx, rule in ipairs(rules) do
       if rule.name == name then
@@ -249,6 +251,19 @@ function ACN:apply(func)
    end
 end
 
+function ACN:usage()
+   local txt = {}
+   local history = {}
+   self:apply(
+      function(rules)
+         if not history[rules] then
+            history[rules] = true
+            table.insert(txt, usage(rules))
+         end
+      end)
+   return table.concat(txt, '\n\nor\n\n')
+end
+
 function ACN:generate(upvalues)
    assert(upvalues, 'upvalues table missing')
    local code = {}
@@ -271,9 +286,9 @@ function ACN:generate(upvalues)
       end
    )
    if quiet then
-      table.insert(code, '  return false, "<err msg>"')
+      table.insert(code, '  return false, graph:usage()')
    else
-      table.insert(code, '  error("invalid arguments")')
+      table.insert(code, '  error(string.format("%s\\ninvalid arguments!", graph:usage()))')
    end
    table.insert(code, 'end')
    return table.concat(code, '\n')
