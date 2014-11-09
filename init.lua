@@ -7,15 +7,6 @@ local setupvalue = utils.setupvalue
 local getupvalue = utils.getupvalue
 local loadstring = loadstring or load
 
--- If you are not use LuaJIT
-if not bit then
-   if _VERSION == "Lua 5.2" then
-      require 'bit32'
-   else
-      require 'bit'
-   end
-end
-
 local function generaterules(rules)
 
    local graph

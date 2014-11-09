@@ -27,16 +27,6 @@ luarocks build https://raw.github.com/torch/argcheck/master/rocks/argcheck-scm-1
 You can also copy the `argcheck` directory where `luajit` (or `lua`) will
 find it.
 
-* * *
-
-Note: argcheck requires a `bit` library. If you are not using `luajit` (you
-are seriously encouraged to switch to it) nor lua 5.2 (which ships with
-`bit32` library), please install first the `luabitop` library or `bitlib`:
-```sh
-luarocks install luabitop
-```
-* * *
-
 Documentation
 ------------
 
