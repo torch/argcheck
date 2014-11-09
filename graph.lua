@@ -44,10 +44,15 @@ function ACN:match(rules, rulemask, named)
    local head = self
    local nmatched = 0
    for _,idx in ipairs(rulemask) do
+      local isnil
+      if idx < 0 then
+         idx = -idx
+         isnil = true
+      end
       local rule = rules[idx]
       local matched = false
       for n=1,head.n do
-         if head.next[n].type == rule.type
+         if head.next[n].type == (isnil and 'nil' or rule.type)
             and head.next[n].check == rule.check
          and (not named or (named and head.next[n].name == rule.name)) then
             head = head.next[n]
@@ -97,10 +102,16 @@ function ACN:addpath(rules, rulemask, named)
       head.rulemask = rulemask
    end
    for n=n+1,#rulemask do
-      local rule = rules[rulemask[n]]
-      local node = ACN.new(rule.type,
+      local idx = rulemask[n]
+      local isnil
+      if idx < 0 then
+         idx = -idx
+         isnil = true
+      end
+      local rule = rules[idx]
+      local node = ACN.new(isnil and 'nil' or rule.type,
                            named and rule.name or nil,
-                           rule.check,
+                           (not isnil) and rule.check or nil, -- nil -> no check at all (beware: not...)
                            n == #rulemask and rules or nil,
                            n == #rulemask and rulemask or nil)
       head:add(node)
@@ -178,7 +189,7 @@ function ACN:generate_ordered_or_named(code, upvalues, named, depth)
 
          local argidx
          for i=1,#self.rulemask do -- DEBUG: bourrin
-            if ridx == self.rulemask[i] then
+            if ridx == math.abs(self.rulemask[i]) then
                argidx = i
                break
             end

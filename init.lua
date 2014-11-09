@@ -18,15 +18,6 @@ end
 
 local function generaterules(rules)
 
-   local nopt = 0   
-   local nrule = 0
-   for _, rule in ipairs(rules) do
-      if rule.default ~= nil or rule.defaulta or rule.defaultf or rule.opt then
-         nopt = nopt + 1
-      end
-      nrule = nrule + 1
-   end
-
    local graph
    if rules.chain or rules.overload then
       local status
@@ -39,26 +30,37 @@ local function generaterules(rules)
    end
    local upvalues = {istype=env.istype, graph=graph}
 
-   for optmask=0,2^nopt-1 do
-      local rulemask = {}
-      local ridx = 1
-      local optidx = 0
-      while ridx <= nrule do
-         local rule = rules[ridx]
-         local skiprule = false
+   local optperrule = {}
+   for ridx, rule in ipairs(rules) do
+      if rule.default ~= nil or rule.defaulta or rule.defaultf then
+         optperrule[ridx] = 2 -- here or not here
+      elseif rule.opt then
+         optperrule[ridx] = 3 -- here, nil or not here
+      else
+         optperrule[ridx] = 1 -- here
+      end
+   end
 
-         if rule.default ~= nil or rule.defaulta or rule.defaultf or rule.opt then
-            optidx = optidx + 1
-            if bit.band(2^(optidx-1), optmask) == 0 then
-               skiprule = true
-            end
-         end
-         
-         if not skiprule then
+   local optperrulestride = {}
+   local nvariant = 1
+   for ridx=#rules,1,-1 do
+      optperrulestride[ridx] = nvariant
+      nvariant = nvariant * optperrule[ridx]
+   end
+
+   for variant=1,nvariant do
+      local r = variant
+      local rulemask = {}
+      for ridx=1,#rules do
+         local f = math.floor((r-1)/optperrulestride[ridx]) + 1
+         if f == 1 then -- here
             table.insert(rulemask, ridx)
+         elseif f == 2 then -- not here
+         elseif f == 3 then -- opt
+            table.insert(rulemask, -ridx)
          end
-            
-         ridx = ridx + 1
+         r = (r-1) % optperrulestride[ridx] + 1
+         local rule = rules[ridx]
       end
 
       if not rules.noordered then
