@@ -54,7 +54,7 @@ local function generaterules(rules)
       end
 
       if not rules.nonamed then
-         if rules[1].name == 'self' then
+         if rules[1] and rules[1].name == 'self' then
             graph:addpath(rules, rulemask, 'M')
          else
             graph:addpath(rules, rulemask, 'N')
@@ -85,6 +85,15 @@ local function argcheck(rules)
       assert(rule.check == nil or type(rule.check) == 'function', 'rule check must be a function or nil')
       assert(rule.defaulta == nil or type(rule.defaulta) == 'string', 'rule defaulta must be a string or nil')
       assert(rule.defaultf == nil or type(rule.defaultf) == 'function', 'rule defaultf must be a function or nil')
+   end
+   if rules[1] and rules[1].name == 'self' then
+      local rule = rules[1]
+      assert(
+            not rule.opt
+            and not rule.default
+            and not rule.defaulta
+            and not rule.defaultf,
+         'self cannot be optional, nor having a default value!')
    end
 
    local code, upvalues = generaterules(rules)
