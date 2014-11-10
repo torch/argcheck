@@ -8,7 +8,6 @@ local getupvalue = utils.getupvalue
 local loadstring = loadstring or load
 
 local function generaterules(rules)
-
    local graph
    if rules.chain or rules.overload then
       local status
@@ -39,27 +38,27 @@ local function generaterules(rules)
       nvariant = nvariant * optperrule[ridx]
    end
 
+   -- note: we keep the original rules (id) for all path variants
+   -- hence, the mask.
    for variant=1,nvariant do
       local r = variant
-      local rulemask = {}
+      local rulemask = {} -- 1/2/3 means present/not present/opt
       for ridx=1,#rules do
-         local f = math.floor((r-1)/optperrulestride[ridx]) + 1
-         if f == 1 then -- here
-            table.insert(rulemask, ridx)
-         elseif f == 2 then -- not here
-         elseif f == 3 then -- opt
-            table.insert(rulemask, -ridx)
-         end
+         table.insert(rulemask, math.floor((r-1)/optperrulestride[ridx]) + 1)
          r = (r-1) % optperrulestride[ridx] + 1
-         local rule = rules[ridx]
       end
+      rulemask = table.concat(rulemask)
 
       if not rules.noordered then
-         graph:addpath(rules, rulemask)
+         graph:addpath(rules, rulemask, 'O')
       end
 
       if not rules.nonamed then
-         graph:addpath(rules, rulemask, true)
+         if rules[1].name == 'self' then
+            graph:addpath(rules, rulemask, 'M')
+         else
+            graph:addpath(rules, rulemask, 'N')
+         end
       end
    end
 
