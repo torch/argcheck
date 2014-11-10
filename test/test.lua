@@ -241,4 +241,21 @@ addfive = argcheck{
 assert(addfive(5, 'hello') == '5.000000 + 5 = 10.000000 [msg = hello]')
 assert(addfive(5) == '5.000000 + 5 = 10.000000 [msg = i know what i am doing]')
 
+local foobar = {checksum=1234567}
+foobar.addfive = argcheck{
+   {name="self", type="table"},
+   {name="x", type="number"},
+   {name="msg", type="string", default="i know what i am doing"},
+   call =
+      function(self, x, msg) -- called in case of success
+         return string.format('%f + 5 = %f [msg = %s] [self.checksum=%s]', x, x+5, msg, self.checksum)
+      end
+}
+
+assert(foobar:addfive(5, 'paf') == '5.000000 + 5 = 10.000000 [msg = paf] [self.checksum=1234567]')
+assert(foobar:addfive{x=5, msg='paf'} == '5.000000 + 5 = 10.000000 [msg = paf] [self.checksum=1234567]')
+
+assert(foobar:addfive(5) == '5.000000 + 5 = 10.000000 [msg = i know what i am doing] [self.checksum=1234567]')
+assert(foobar:addfive{x=5} == '5.000000 + 5 = 10.000000 [msg = i know what i am doing] [self.checksum=1234567]')
+
 print('PASSED')
