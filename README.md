@@ -298,6 +298,62 @@ addfive{x=1, msg="hello world"}
 are valid. However, ordered arguments are handled in a *much faster* way
 (especially with LuaJIT) than named arguments.
 
+### Method named arguments
+
+The common way to define a "method" in Lua is by doing the following:
+```lua
+local object = {}
+
+function object:foobar(x, msg) -- a method foobar
+end
+```
+
+The syntax sugar call `object:foobar(x, msg)` is equivalent to the function call
+```lua
+object.foobar(object, x, msg)
+```
+
+Calling a method with named arguments would be done with
+```lua
+object:foobar{x=..., msg=...}
+```
+(where `...` is the actual content of x and msg). This translates to
+`foobar(object, {x=..., msg=...})`, which is not a regular named function
+call, given that the `object` itself should not be treated as a named
+argument. Argcheck will handle such calls, provided the name of the object
+argument is `self`, in the rule definition. For e.g.:
+```lua
+local object = {checksum=1234567} -- the object is just a table here
+local check = argcheck{
+   {name="self", type="table"}, -- check the type of self
+   {name="x", type="number"},
+   {name="msg", type="string", default="i know what i am doing"},
+}
+
+function object.foobar(...) -- note the '.', given we type-check self too
+   local self, x, msg = check(...)
+   print(string.format('%f + 5 = %f [msg = %s] [self.checksum=%s]', x, x+5, msg, self.checksum))
+end
+
+-- method ordered arguments call
+> object:foobar(5, 'hello world')
+5.000000 + 5 = 10.000000 [msg = hello world] [self.checksum=1234567]
+
+-- method named arguments call (works too!)
+> object:foobar{x=5, msg='hello world'}
+5.000000 + 5 = 10.000000 [msg = hello world] [self.checksum=1234567]
+
+-- default argument (and other things) work the same than previously
+> object:foobar(7)
+7.000000 + 5 = 12.000000 [msg = i know what i am doing] [self.checksum=1234567]
+
+> object:foobar{x=7}
+7.000000 + 5 = 12.000000 [msg = i know what i am doing] [self.checksum=1234567]
+```
+
+Note: `argcheck` assumes the function defined by a set of rules is in fact
+a method, if the name of the first rule is `self`.
+
 ### Options global to all rules
 
 Argcheck has several interesting global options, as the `help` (or `doc`) we have introduced already.
@@ -698,3 +754,8 @@ end
 Note that if you change the `istype()` function, it will *not* affect previously defined
 argument checking functions: `istype()` is passed as an upvalue for each created argument
 function.
+
+### Real-life example
+
+See [our cairo FFI interface](https://github.com/torch/cairo-ffi), which
+leverages `argcheck`.
