@@ -366,6 +366,37 @@ check = argcheck{
 ```
 Other global options are described in the following.
 
+#### Function call
+
+An important feature of `argcheck` is its ability to call a function if the
+passed arguments match the defined rules.
+
+Taking back the first example, one could use the `call` option and rewrite
+it as:
+```lua
+addfive = argcheck{
+   {name="x", type="number"},
+
+   call = function(x)
+            print(string.format('%f + 5 = %f', x, x+5))
+          end
+}
+
+> addfive(5)
+5.000000 + 5 = 10.000000
+
+> addfive()
+stdin:1: arguments:
+{
+   x = number  --
+}
+```
+
+As we will see below, `argcheck` can also handle function overloading, and
+other complex situations, in which the `call` feature can simplify the
+programmer's life. In that respect, it is highly encouraged to use this
+feature.
+
 #### Pack arguments into a table
 
 In some cases, it might be interesting to get all arguments into a
@@ -450,31 +481,6 @@ false   arguments:
 {
   [x   = number]  -- the age of the captain [default=0]
    msg = string   -- a message
-}
-```
-
-#### Function call
-
-In case of success, the argument checker can call a function if
-needed. Some users might find it more convenient than calling the argument
-checker inside the function of interest. Taking back the first example, one
-could use the `call` option and rewrite it as:
-```lua
-addfive = argcheck{
-   {name="x", type="number"},
-
-   call = function(x)
-            print(string.format('%f + 5 = %f', x, x+5))
-          end
-}
-
-> addfive(5)
-5.000000 + 5 = 10.000000
-
-> addfive()
-stdin:1: arguments:
-{
-   x = number  --
 }
 ```
 
@@ -653,76 +659,79 @@ check, dotgraph = argcheck{
    {name="msg", type="string", help="a message"}
 }
 
-local arg01868630_1d
+local arg0403e9b0_1d
 local istype
 local graph
 return function(...)
-  local narg = select("#", ...)
-  if narg >= 1 and istype(select(1, ...), "string") then
-     if narg == 1 then
-        local arg1 = arg01868630_1d
-        local arg2 = select(1, ...)
-        return arg1, arg2
-     end
-  end
-  if narg >= 1 and istype(select(1, ...), "number") then
-     if narg >= 2 and istype(select(2, ...), "string") then
-        if narg == 2 then
-           local arg1 = select(1, ...)
-           local arg2 = select(2, ...)
-           return arg1, arg2
-        end
-     end
-  end
-  if narg == 1 and istype(select(1, ...), "table") then
-     local args = select(1, ...)
-     local narg = 0
-     for k,v in pairs(args) do
-        narg = narg + 1
-     end
-     if narg >= 1 and istype(args.msg, "string") then
-        if narg == 1 then
-           local arg1 = arg01868630_1d
-           local arg2 = args.msg
-           return arg1, arg2
-        end
-     end
-     if narg >= 1 and istype(args.x, "number") then
-        if narg >= 2 and istype(args.msg, "string") then
-           if narg == 2 then
-              local arg1 = args.x
-              local arg2 = args.msg
-              return arg1, arg2
-           end
-        end
-     end
-  end
-  assert(graph)
-  error(string.format("%s\ninvalid arguments!", graph:usage()))
+   local narg = select("#", ...)
+   if narg >= 1 and istype(select(1, ...), "number") then
+      if narg >= 2 and istype(select(2, ...), "string") then
+         if narg == 2 then
+            local arg1 = select(1, ...)
+            local arg2 = select(2, ...)
+            return arg1, arg2
+         end
+      end
+   end
+   if narg >= 1 and istype(select(1, ...), "string") then
+      if narg == 1 then
+         local arg2 = select(1, ...)
+         local arg1 = arg0403e9b0_1d
+         return arg1, arg2
+      end
+   end
+   if narg == 1 and istype(select(1, ...), "table") then
+      local args = select(1, ...)
+      local narg = 0
+      for k,v in pairs(args) do
+         narg = narg + 1
+      end
+      if narg >= 1 and istype(args.x, "number") then
+         if narg >= 2 and istype(args.msg, "string") then
+            if narg == 2 then
+               local arg1 = args.x
+               local arg2 = args.msg
+               return arg1, arg2
+            end
+         end
+      end
+      if narg >= 1 and istype(args.msg, "string") then
+         if narg == 1 then
+            local arg2 = args.msg
+            local arg1 = arg0403e9b0_1d
+            return arg1, arg2
+         end
+      end
+   end
+   assert(graph)
+   error(string.format("%s\ninvalid arguments!", graph:usage()))
 end
 
 > print(dotgraph)
 digraph ACN {
 edge [penwidth=.3 arrowsize=0.8];
-id0dcfe350 [label="@" penwidth=.1 fontsize=10 style=filled fillcolor="#eeeeee"];
+id0403efc0 [label="@" penwidth=.1 fontsize=10 style=filled fillcolor="#eeeeee"];
 edge [penwidth=.3 arrowsize=0.8];
-id0dcfd8d8 [label="string" penwidth=.1 fontsize=10 style=filled fillcolor="#aaaaaa"];
-id0dcfe350 -> id0dcfd8d8;
+id0403f460 [label="number" penwidth=.1 fontsize=10 style=filled fillcolor="#eeeeee"];
 edge [penwidth=.3 arrowsize=0.8];
-id0dcfdb50 [label="string (msg)" penwidth=.1 fontsize=10 style=filled fillcolor="#aaaaaa"];
-id0dcfe350 -> id0dcfdb50;
+id0403f530 [label="string" penwidth=.1 fontsize=10 style=filled fillcolor="#aaaaaa"];
+id0403f460 -> id0403f530;
+id0403efc0 -> id0403f460;
 edge [penwidth=.3 arrowsize=0.8];
-id0dcfddb0 [label="number" penwidth=.1 fontsize=10 style=filled fillcolor="#eeeeee"];
+id0403f7b8 [label="table" penwidth=.1 fontsize=10 style=filled fillcolor="#eeeeee"];
 edge [penwidth=.3 arrowsize=0.8];
-id0dcfd9c0 [label="string" penwidth=.1 fontsize=10 style=filled fillcolor="#aaaaaa"];
-id0dcfddb0 -> id0dcfd9c0;
-id0dcfe350 -> id0dcfddb0;
+id0403f618 [label="number (x)" penwidth=.1 fontsize=10 style=filled fillcolor="#eeeeee"];
 edge [penwidth=.3 arrowsize=0.8];
-id0dcfe978 [label="number (x)" penwidth=.1 fontsize=10 style=filled fillcolor="#eeeeee"];
+id04040068 [label="string (msg)" penwidth=.1 fontsize=10 style=filled fillcolor="#aaaaaa"];
+id0403f618 -> id04040068;
+id0403f7b8 -> id0403f618;
 edge [penwidth=.3 arrowsize=0.8];
-id0dcfeb68 [label="string (msg)" penwidth=.1 fontsize=10 style=filled fillcolor="#aaaaaa"];
-id0dcfe978 -> id0dcfeb68;
-id0dcfe350 -> id0dcfe978;
+id040408b0 [label="string (msg)" penwidth=.1 fontsize=10 style=filled fillcolor="#aaaaaa"];
+id0403f7b8 -> id040408b0;
+id0403efc0 -> id0403f7b8;
+edge [penwidth=.3 arrowsize=0.8];
+id04040390 [label="string" penwidth=.1 fontsize=10 style=filled fillcolor="#aaaaaa"];
+id0403efc0 -> id04040390;
 }
 ```
 
@@ -734,7 +743,9 @@ following:
 ![](doc/tree.png)
 
 Nodes with `(...)` are nodes corresponding to named arguments. Dark gray
-nodes represent valid paths in the graph.
+nodes represent valid paths in the graph. Node with a `*` suffix (after the
+type name) are nodes which _might_ be `self` first argument of a method
+(not present in the shown example).
 
 ### Advanced usage
 
