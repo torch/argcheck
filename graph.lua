@@ -78,13 +78,11 @@ function ACN.new(typename, name, check, rules, rulesmask, rulestype)
    self.rulesmask = rulesmask
    self.rulestype = rulestype
    self.next = {}
-   self.n = 0
    return self
 end
 
 function ACN:add(node)
    table.insert(self.next, node)
-   self.n = self.n + 1
 end
 
 function ACN:match(rules)
@@ -92,11 +90,11 @@ function ACN:match(rules)
    for idx=1,#rules do
       local rule = rules[idx]
       local matched = false
-      for n=1,head.n do
-         if head.next[n].type == rule.type
-         and head.next[n].check == rule.check
-         and head.next[n].name == rule.name then
-            head = head.next[n]
+      for _,child in ipairs(head.next) do
+         if child.type == rule.type
+         and child.check == rule.check
+         and child.name == rule.name then
+            head = child
             matched = true
             break
          end
@@ -184,12 +182,11 @@ function ACN:print(txt)
                                    self.name and string.format(' (%s)', self.name) or '',
                                    self.rules and '#aaaaaa' or '#eeeeee'))
 
-   for n=1,self.n do
-      local next = self.next[n]
-      next:print(txt) -- make sure its id is defined
+   for _,child in ipairs(self.next) do
+      child:print(txt) -- make sure its id is defined
       table.insert(txt, string.format('id%s -> id%s;',
                                       self:id(),
-                                      next:id()))
+                                      child:id()))
    end
 
    if isroot then
@@ -313,8 +310,8 @@ function ACN:generate_ordered_or_named(code, upvalues, rulestype, depth)
       table.insert(code, string.format('  %send', string.rep('  ', depth)))
    end
 
-   for i=1,self.n do
-      self.next[i]:generate_ordered_or_named(code, upvalues, rulestype, depth+1)
+   for _,child in ipairs(self.next) do
+      child:generate_ordered_or_named(code, upvalues, rulestype, depth+1)
    end
 
    if depth > 0 then
@@ -325,8 +322,8 @@ end
 
 function ACN:apply(func)
    func(self)
-   for i=1,self.n do
-      self.next[i]:apply(func)
+   for _,child in ipairs(self.next) do
+      child:apply(func)
    end
 end
 
