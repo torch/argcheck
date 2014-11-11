@@ -797,3 +797,7 @@ function.
 
 See [our cairo FFI interface](https://github.com/torch/cairo-ffi), which
 leverages `argcheck`.
+
+### Benchmark
+
+See [the `argcheck` benchmark page](benchmark/README.md) for detailed performance report.
