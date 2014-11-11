@@ -27,6 +27,33 @@ luarocks build https://raw.github.com/torch/argcheck/master/rocks/argcheck-scm-1
 You can also copy the `argcheck` directory where `luajit` (or `lua`) will
 find it.
 
+Changelog
+---------
+
+  - Version 2.0 (git)
+     - Rewrote completely the code generation.
+     - Now creates a tree of possible argument paths (much more efficient).
+     - Thanks to the tree approach, many bugs have been fixed.
+     - Argcheck will produce an error if there are ambiguous argument rules.
+     - The feature `chain` is still deprecated (but available). Use `overload` instead.
+     - True overloading is happening. Contrary to `chain`, `overload` functions must be overwritten.
+     - Same functionalities than in 1.0, plus
+        - Handles named method calls
+        - Can generate a dot graphviz file of the argument paths for debugging purposes.
+
+  - Version 1.0
+     - Simplified the way of calling argcheck.
+     - Same functionalities than before, except named method call were not handled anymore.
+     - Added the `call` option to call a function if the arguments match given rules.
+     - Added the `chain` option to chain several argcheck function calls (a cheap version of overloading).
+     - Simplified the way of adding a type.
+
+  - Version 0.5
+     - Handling of default arguments (including defaulting to another argument), optional arguments (which might be `nil`), named arguments, named only option.
+     - Complicated way to handle method and functions.
+     - Calling function is mandatory.
+
+
 Documentation
 ------------
 
