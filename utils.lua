@@ -29,4 +29,12 @@ function utils.getupvalue(func, name, quiet)
    end
 end
 
+function utils.duptable(tbl)
+   local dup = {}
+   for k,v in pairs(tbl) do
+      dup[k] = v
+   end
+   return dup
+end
+
 return utils

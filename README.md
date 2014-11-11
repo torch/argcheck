@@ -1,11 +1,14 @@
 argcheck
 ========
 
-A powerful argument checker library for your lua functions.
+A powerful function argument checker and function overloading system for
+Lua or LuaJIT.
 
 Argcheck generates specific code for checking arguments of a function. This
-allows complex argument checking (possibly with optional values), with almost
-no overhead (with LuaJIT).
+allows complex argument checking (possibly with optional values), with
+little overhead (with [LuaJIT](http://luajit.org)). Argcheck computes a
+tree of all possible variants of arguments, allowing efficient overloading
+and default argument management.
 
 Installation
 ------------
@@ -24,15 +27,32 @@ luarocks build https://raw.github.com/torch/argcheck/master/rocks/argcheck-scm-1
 You can also copy the `argcheck` directory where `luajit` (or `lua`) will
 find it.
 
-* * *
+Changelog
+---------
 
-Note: argcheck requires a `bit` library. If you are not using `luajit` (you
-are seriously encouraged to switch to it), please install first the
-`luabitop` library or `bitlib`:
-```sh
-luarocks install luabitop
-```
-* * *
+  - Version 2.0 (git)
+     - Rewrote completely the code generation.
+     - Now creates a tree of possible argument paths (much more efficient).
+     - Thanks to the tree approach, many bugs have been fixed.
+     - Argcheck will produce an error if there are ambiguous argument rules.
+     - The feature `chain` is still deprecated (but available). Use `overload` instead.
+     - True overloading is happening. Contrary to `chain`, `overload` functions must be overwritten.
+     - Same functionalities than in 1.0, plus
+        - Handles named method calls
+        - Can generate a dot graphviz file of the argument paths for debugging purposes.
+
+  - Version 1.0
+     - Simplified the way of calling argcheck.
+     - Same functionalities than before, except named method call were not handled anymore.
+     - Added the `call` option to call a function if the arguments match given rules.
+     - Added the `chain` option to chain several argcheck function calls (a cheap version of overloading).
+     - Simplified the way of adding a type.
+
+  - Version 0.5
+     - Handling of default arguments (including defaulting to another argument), optional arguments (which might be `nil`), named arguments, named only option.
+     - Complicated way to handle method and functions.
+     - Calling function is mandatory.
+
 
 Documentation
 ------------
@@ -302,8 +322,64 @@ and
 ```lua
 addfive{x=1, msg="hello world"}
 ```
-are valid. However, ordered arguments are handled *much faster* than named
-arguments.
+are valid. However, ordered arguments are handled in a *much faster* way
+(especially with LuaJIT) than named arguments.
+
+### Method named arguments
+
+The common way to define a "method" in Lua is by doing the following:
+```lua
+local object = {}
+
+function object:foobar(x, msg) -- a method foobar
+end
+```
+
+The syntax sugar call `object:foobar(x, msg)` is equivalent to the function call
+```lua
+object.foobar(object, x, msg)
+```
+
+Calling a method with named arguments would be done with
+```lua
+object:foobar{x=..., msg=...}
+```
+(where `...` is the actual content of x and msg). This translates to
+`foobar(object, {x=..., msg=...})`, which is not a regular named function
+call, given that the `object` itself should not be treated as a named
+argument. Argcheck will handle such calls, provided the name of the object
+argument is `self`, in the rule definition. For e.g.:
+```lua
+local object = {checksum=1234567} -- the object is just a table here
+local check = argcheck{
+   {name="self", type="table"}, -- check the type of self
+   {name="x", type="number"},
+   {name="msg", type="string", default="i know what i am doing"},
+}
+
+function object.foobar(...) -- note the '.', given we type-check self too
+   local self, x, msg = check(...)
+   print(string.format('%f + 5 = %f [msg = %s] [self.checksum=%s]', x, x+5, msg, self.checksum))
+end
+
+-- method ordered arguments call
+> object:foobar(5, 'hello world')
+5.000000 + 5 = 10.000000 [msg = hello world] [self.checksum=1234567]
+
+-- method named arguments call (works too!)
+> object:foobar{x=5, msg='hello world'}
+5.000000 + 5 = 10.000000 [msg = hello world] [self.checksum=1234567]
+
+-- default argument (and other things) work the same than previously
+> object:foobar(7)
+7.000000 + 5 = 12.000000 [msg = i know what i am doing] [self.checksum=1234567]
+
+> object:foobar{x=7}
+7.000000 + 5 = 12.000000 [msg = i know what i am doing] [self.checksum=1234567]
+```
+
+Note: `argcheck` assumes the function defined by a set of rules is in fact
+a method, if the name of the first rule is `self`.
 
 ### Options global to all rules
 
@@ -316,6 +392,37 @@ check = argcheck{
 }
 ```
 Other global options are described in the following.
+
+#### Function call
+
+An important feature of `argcheck` is its ability to call a function if the
+passed arguments match the defined rules.
+
+Taking back the first example, one could use the `call` option and rewrite
+it as:
+```lua
+addfive = argcheck{
+   {name="x", type="number"},
+
+   call = function(x)
+            print(string.format('%f + 5 = %f', x, x+5))
+          end
+}
+
+> addfive(5)
+5.000000 + 5 = 10.000000
+
+> addfive()
+stdin:1: arguments:
+{
+   x = number  --
+}
+```
+
+As we will see below, `argcheck` can also handle function overloading, and
+other complex situations, in which the `call` feature can simplify the
+programmer's life. In that respect, it is highly encouraged to use this
+feature.
 
 #### Pack arguments into a table
 
@@ -404,34 +511,9 @@ false   arguments:
 }
 ```
 
-#### Function call
+#### Overloading
 
-In case of success, the argument checker can call a function if
-needed. Some users might find it more convenient than calling the argument
-checker inside the function of interest. Taking back the first example, one
-could use the `call` option and rewrite it as:
-```lua
-addfive = argcheck{
-   {name="x", type="number"},
-
-   call = function(x)
-            print(string.format('%f + 5 = %f', x, x+5))
-          end
-}
-
-> addfive(5)
-5.000000 + 5 = 10.000000
-
-> addfive()
-stdin:1: arguments:
-{
-   x = number  --
-}
-```
-
-#### Chained argchecks
-
-It is possible to chain several argchecks manually. E.g., in our example,
+It is possible to overload previous created argchecks manually. E.g., in our example,
 if we want `addfive()` to handle the case of a number or string argument,
 one could leverage the `quiet` global option and do the following:
 ```lua
@@ -490,16 +572,18 @@ stdin:19: invalid arguments
 ```
 
 This can however quickly become a burden, if there are many possible
-argument variations. Instead, one can use the `chain` option, which is
-supposed to be used together with `call`. The value provided to `chain`
-must be a function previously created by `argcheck`.  In that case,
-`argcheck` will make sure that in case of failure of the provided function
-in `chain`, the given argcheck will then be tried. With the `chain` option,
-`argcheck()` always return the head of the chain.
+argument variations. Instead, one can use the `overload` option, which is
+supposed to be used together with `call`. The value provided to `overload`
+must be a function previously created by `argcheck`.
 
 If the arguments do not match any given variations, then the created
 argument checker will show a global error message, with usage summarizing
 all possibilites.
+
+When overloading, `argcheck` will create a new function (for efficiency
+reasons) including all possible cases which are being overloaded, as well
+as the new given case. _Beware_ to overwrite the returned `argcheck`
+function each time you overload one!
 
 The previous example is then equivalent to:
 ```lua
@@ -510,9 +594,9 @@ addfive = argcheck{
          end
 }
 
-argcheck{
+addfive = argcheck{ -- overwrite it
   {name="str", type="string"},
-  chain = addfive, -- chained with previous one
+  overload = addfive, -- overload the previous one
   call = function(str) -- called in case of success
            print(string.format('%s .. 5 = %s', str, str .. '5'))
          end
@@ -538,53 +622,157 @@ arguments:
 }
 ```
 
+#### Force
+
+`argcheck` hates ambiguities, and will spit out an error message if you try
+to create some rules which are ambiguous. This can in fact happen easily
+when overloading, or when mixing named/ordered arguments.
+
+For example:
+```lua
+addfive = argcheck{
+   {name="x", type="number"},
+   call =
+      function(x) -- called in case of success
+         print(string.format('%f + 5 = %f', x, x+5))
+      end
+}
+
+addfive = argcheck{
+   {name="x", type="number"},
+   {name="msg", type="string", default="i know what i am doing"},
+   overload = addfive,
+   call =
+      function(x, msg) -- called in case of success
+         print(string.format('%f + 5 = %f [msg = %s]', x, x+5, msg))
+      end
+}
+```
+
+will led to the error message "argcheck rules led to ambiguous
+situations". One can override this behavior, with the `force` flag:
+```lua
+addfive = argcheck{
+   {name="x", type="number"},
+   {name="msg", type="string", default="i know what i am doing"},
+   overload = addfive,
+   force = true,
+   call =
+      function(x, msg) -- called in case of success
+         print(string.format('%f + 5 = %f [msg = %s]', x, x+5, msg))
+      end
+}
+```
+In this case, consider the subsequent calls:
+```lua
+> addfive(5, 'hello')
+5.000000 + 5 = 10.000000 [msg = hello]
+> addfive(5)
+5.000000 + 5 = 10.000000 [msg = i know what i am doing]
+```
+Note that the first function is then never called (you know what you are doing!).
+
 #### Debug
 
-Adding `debug=true` as global option will simply dump the corresponding code
-for the given checking argument function.
+Adding `debug=true` as global option will simply dump in stdout the
+corresponding code for the given checking argument function. It will also
+return a [dot graph](http://www.graphviz.org), for better understanding of
+what is going on.
 
 ```lua
-check = argcheck{
+check, dotgraph = argcheck{
    debug=true,
    {name="x", type="number", default=0, help="the age of the captain"},
    {name="msg", type="string", help="a message"}
 }
 
--- check
+local arg0403e9b0_1d
 local istype
-local usage
-local arg1d
+local graph
 return function(...)
-   local arg1 = arg1d
-   local arg2
    local narg = select("#", ...)
-   if narg == 1 and istype(select(1, ...), "string") then
-      arg2 = select(1, ...)
-   elseif narg == 2 and istype(select(1, ...), "number") and istype(select(2, ...), "string") then
-      arg1 = select(1, ...)
-      arg2 = select(2, ...)
-   elseif narg == 1 and istype(select(1, ...), "table") then
-      local arg = select(1, ...)
-      local narg = 0
-      if arg.x then narg = narg + 1 end
-      if arg.msg then narg = narg + 1 end
-      if narg == 1 and istype(arg.msg, "string") then
-         arg2 = arg.msg
-      elseif narg == 2 and istype(arg.x, "number") and istype(arg.msg, "string") then
-         arg1 = arg.x
-         arg2 = arg.msg
-      else
-         error(usage, 2)
+   if narg >= 1 and istype(select(1, ...), "number") then
+      if narg >= 2 and istype(select(2, ...), "string") then
+         if narg == 2 then
+            local arg1 = select(1, ...)
+            local arg2 = select(2, ...)
+            return arg1, arg2
+         end
       end
-      return arg1, arg2
-   else
-      error(usage, 2)
    end
-   return arg1, arg2
+   if narg >= 1 and istype(select(1, ...), "string") then
+      if narg == 1 then
+         local arg2 = select(1, ...)
+         local arg1 = arg0403e9b0_1d
+         return arg1, arg2
+      end
+   end
+   if narg == 1 and istype(select(1, ...), "table") then
+      local args = select(1, ...)
+      local narg = 0
+      for k,v in pairs(args) do
+         narg = narg + 1
+      end
+      if narg >= 1 and istype(args.x, "number") then
+         if narg >= 2 and istype(args.msg, "string") then
+            if narg == 2 then
+               local arg1 = args.x
+               local arg2 = args.msg
+               return arg1, arg2
+            end
+         end
+      end
+      if narg >= 1 and istype(args.msg, "string") then
+         if narg == 1 then
+            local arg2 = args.msg
+            local arg1 = arg0403e9b0_1d
+            return arg1, arg2
+         end
+      end
+   end
+   assert(graph)
+   error(string.format("%s\ninvalid arguments!", graph:usage()))
 end
+
+> print(dotgraph)
+digraph ACN {
+edge [penwidth=.3 arrowsize=0.8];
+id0403efc0 [label="@" penwidth=.1 fontsize=10 style=filled fillcolor="#eeeeee"];
+edge [penwidth=.3 arrowsize=0.8];
+id0403f460 [label="number" penwidth=.1 fontsize=10 style=filled fillcolor="#eeeeee"];
+edge [penwidth=.3 arrowsize=0.8];
+id0403f530 [label="string" penwidth=.1 fontsize=10 style=filled fillcolor="#aaaaaa"];
+id0403f460 -> id0403f530;
+id0403efc0 -> id0403f460;
+edge [penwidth=.3 arrowsize=0.8];
+id0403f7b8 [label="table" penwidth=.1 fontsize=10 style=filled fillcolor="#eeeeee"];
+edge [penwidth=.3 arrowsize=0.8];
+id0403f618 [label="number (x)" penwidth=.1 fontsize=10 style=filled fillcolor="#eeeeee"];
+edge [penwidth=.3 arrowsize=0.8];
+id04040068 [label="string (msg)" penwidth=.1 fontsize=10 style=filled fillcolor="#aaaaaa"];
+id0403f618 -> id04040068;
+id0403f7b8 -> id0403f618;
+edge [penwidth=.3 arrowsize=0.8];
+id040408b0 [label="string (msg)" penwidth=.1 fontsize=10 style=filled fillcolor="#aaaaaa"];
+id0403f7b8 -> id040408b0;
+id0403efc0 -> id0403f7b8;
+edge [penwidth=.3 arrowsize=0.8];
+id04040390 [label="string" penwidth=.1 fontsize=10 style=filled fillcolor="#aaaaaa"];
+id0403efc0 -> id04040390;
+}
 ```
 
-As you can see, for a simple example like this one, the code is already not that trivial.
+As you can see, for a simple example like this one, the code is already not
+that trivial, but handles both named and ordered arguments. Generating an
+image out of the graph with dot (e.g. with `dot -Tpng`), leads to the
+following:
+
+![](doc/tree.png)
+
+Nodes with `(...)` are nodes corresponding to named arguments. Dark gray
+nodes represent valid paths in the graph. Node with a `*` suffix (after the
+type name) are nodes which _might_ be `self` first argument of a method
+(not present in the shown example).
 
 ### Advanced usage
 
@@ -604,3 +792,12 @@ end
 Note that if you change the `istype()` function, it will *not* affect previously defined
 argument checking functions: `istype()` is passed as an upvalue for each created argument
 function.
+
+### Real-life example
+
+See [our cairo FFI interface](https://github.com/torch/cairo-ffi), which
+leverages `argcheck`.
+
+### Benchmark
+
+See [the `argcheck` benchmark page](benchmark/README.md) for detailed performance report.
