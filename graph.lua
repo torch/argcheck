@@ -388,6 +388,7 @@ function ACN:generate(upvalues)
       table.insert(code, 1, string.format('local %s', upvaluename))
    end
 
+   table.insert(code, '  assert(istype)') -- keep istype as an upvalue
    table.insert(code, '  assert(graph)') -- keep graph as an upvalue
 
    local quiet = true
