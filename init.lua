@@ -40,7 +40,7 @@ local function generaterules(rules)
 
    -- note: we keep the original rules (id) for all path variants
    -- hence, the mask.
-   for variant=1,nvariant do
+   for variant=nvariant,1,-1 do
       local r = variant
       local rulemask = {} -- 1/2/3 means present/not present/opt
       for ridx=1,#rules do
