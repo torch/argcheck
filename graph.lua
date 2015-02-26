@@ -213,19 +213,27 @@ function ACN:generate_ordered_or_named(code, upvalues, rulestype, depth)
       if self.check then
          upvalues[string.format('check%s', func2id(self.check))] = self.check
       end
-      table.insert(code, string.format('%sif narg >= %d and istype(%s, "%s")%s then',
-                                       string.rep('  ', depth),
-                                       depth,
-                                       argname,
-                                       self.type,
-                                       self.check and string.format(' and check%s(%s)', func2id(self.check), argname) or ''))
+      if self.type == 'nil' and (rulestype == 'N' or rulestype == 'M') then
+         table.insert(code, string.format('%sif istype(%s, "%s")%s then',
+                                          string.rep('  ', depth),
+                                          argname,
+                                          self.type,
+                                          self.check and string.format(' and check%s(%s)', func2id(self.check), argname) or ''))
+      else
+         table.insert(code, string.format('%sif narg > 0 and istype(%s, "%s")%s then',
+                                          string.rep('  ', depth),
+                                          argname,
+                                          self.type,
+                                          self.check and string.format(' and check%s(%s)', func2id(self.check), argname) or ''))
+         table.insert(code, string.format('%s  narg = narg - 1', string.rep('  ', depth)))
+      end
    end
 
    if self.rules and self.rulestype == rulestype then
       local rules = self.rules
       local rulesmask = self.rulesmask
       local id = table2id(rules)
-      table.insert(code, string.format('  %sif narg == %d then', string.rep('  ', depth), depth))
+      table.insert(code, string.format('  %sif narg == 0 then', string.rep('  ', depth)))
 
       -- 'M' case (method: first arg is self)
       if rulestype == 'M' then
@@ -245,7 +253,7 @@ function ACN:generate_ordered_or_named(code, upvalues, rulestype, depth)
       end
 
       -- passed arguments
-      local maskedrules = rules2maskedrules(rules, rulesmask)-- no, rulestype)
+      local maskedrules = rules2maskedrules(rules, rulesmask)
       for argidx, rule in ipairs(maskedrules) do
 
          local argname =
@@ -260,7 +268,7 @@ function ACN:generate_ordered_or_named(code, upvalues, rulestype, depth)
       end
 
       -- default arguments
-      local defaultrules = rules2defaultrules(rules, rulesmask)--no, rulestype)
+      local defaultrules = rules2defaultrules(rules, rulesmask)
       local defacode = {}
       for _, rule in ipairs(defaultrules) do
          if rule.default ~= nil then
@@ -315,6 +323,9 @@ function ACN:generate_ordered_or_named(code, upvalues, rulestype, depth)
    end
 
    if depth > 0 then
+      if self.type ~= 'nil' or (rulestype ~= 'N' and rulestype ~= 'M') then
+         table.insert(code, string.format('%s  narg = narg + 1', string.rep('  ', depth)))
+      end
       table.insert(code, string.format('%send', string.rep('  ', depth)))
    end
 
@@ -350,7 +361,7 @@ function ACN:generate(upvalues)
    if self:hasruletype('N') then -- is there any named?
       local selfnamed = self:match({{type='table'}})
       assert(selfnamed ~= self, 'internal bug, please report')
-      table.insert(code, '  if narg == 1 and istype(select(1, ...), "table") then')
+      table.insert(code, '  if select("#", ...) == 1 and istype(select(1, ...), "table") then')
       table.insert(code, '    local args = select(1, ...)')
       table.insert(code, '    local narg = 0')
       table.insert(code, '    for k,v in pairs(args) do')
@@ -369,7 +380,7 @@ function ACN:generate(upvalues)
             upvalues[string.format('check%s', func2id(selfnamed.check))] = selfnamed.check
          end
          table.insert(code,
-                      string.format('  if narg == 2 and istype(select(2, ...), "table") and istype(select(1, ...), "%s")%s then',
+                      string.format('  if select("#", ...) == 2 and istype(select(2, ...), "table") and istype(select(1, ...), "%s")%s then',
                                     selfnamed.type,
                                     selfnamed.check and string.format(' and check%s(select(1, ...))', func2id(self.check)) or '')
          )
