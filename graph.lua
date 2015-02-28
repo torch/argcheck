@@ -271,12 +271,13 @@ function ACN:generate_ordered_or_named(code, upvalues, rulestype, depth)
       local defaultrules = rules2defaultrules(rules, rulesmask)
       local defacode = {}
       for _, rule in ipairs(defaultrules) do
+         local defidx = rulestype == 'M' and rule.__ridx+1 or rule.__ridx
          if rule.default ~= nil then
-            table.insert(code, string.format('    %slocal arg%d = arg%s_%dd', string.rep('  ', depth), rule.__ridx, id, rule.__ridx))
-            upvalues[string.format('arg%s_%dd', id, rule.__ridx)] = rule.default
+            table.insert(code, string.format('    %slocal arg%d = arg%s_%dd', string.rep('  ', depth), rule.__ridx, id, defidx))
+            upvalues[string.format('arg%s_%dd', id, defidx)] = rule.default
          elseif rule.defaultf then
-            table.insert(code, string.format('    %slocal arg%d = arg%s_%df()', string.rep('  ', depth), rule.__ridx, id, rule.__ridx))
-            upvalues[string.format('arg%s_%df', id, rule.__ridx)] = rule.defaultf
+            table.insert(code, string.format('    %slocal arg%d = arg%s_%df()', string.rep('  ', depth), rule.__ridx, id, defidx))
+            upvalues[string.format('arg%s_%df', id, defidx)] = rule.defaultf
          elseif rule.opt then
             table.insert(code, string.format('    %slocal arg%d', string.rep('  ', depth), rule.__ridx))
          elseif rule.defaulta then

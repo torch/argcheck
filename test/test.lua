@@ -258,6 +258,26 @@ assert(foobar:addfive{x=5, msg='paf'} == '5.000000 + 5 = 10.000000 [msg = paf] [
 assert(foobar:addfive(5) == '5.000000 + 5 = 10.000000 [msg = i know what i am doing] [self.checksum=1234567]')
 assert(foobar:addfive{x=5} == '5.000000 + 5 = 10.000000 [msg = i know what i am doing] [self.checksum=1234567]')
 
+foobar.addfive = argcheck{
+   {name="self", type="table"},
+   {name="x", type="number", default=5},
+   {name="msg", type="string", default="wassup"},
+   call =
+      function(self, x, msg) -- called in case of success
+         return string.format('%f + 5 = %f [msg = %s] [self.checksum=%s]', x, x+5, msg, self.checksum)
+      end
+}
+
+assert(foobar:addfive() == '5.000000 + 5 = 10.000000 [msg = wassup] [self.checksum=1234567]')
+assert(foobar:addfive('paf') == '5.000000 + 5 = 10.000000 [msg = paf] [self.checksum=1234567]')
+assert(foobar:addfive(6, 'paf') == '6.000000 + 5 = 11.000000 [msg = paf] [self.checksum=1234567]')
+assert(foobar:addfive(6) == '6.000000 + 5 = 11.000000 [msg = wassup] [self.checksum=1234567]')
+
+assert(foobar:addfive{} == '5.000000 + 5 = 10.000000 [msg = wassup] [self.checksum=1234567]')
+assert(foobar:addfive{msg='paf'} == '5.000000 + 5 = 10.000000 [msg = paf] [self.checksum=1234567]')
+assert(foobar:addfive{x=6, msg='paf'} == '6.000000 + 5 = 11.000000 [msg = paf] [self.checksum=1234567]')
+assert(foobar:addfive{x=6} == '6.000000 + 5 = 11.000000 [msg = wassup] [self.checksum=1234567]')
+
 addstuff = argcheck{
    {name="x", type="number"},
    {name="y", type="number", default=7},
