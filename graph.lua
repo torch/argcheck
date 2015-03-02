@@ -376,14 +376,13 @@ function ACN:generate(upvalues)
       if head.isself then -- named self method
          local selfnamed = head:match({{type='table'}})
          assert(selfnamed ~= head, 'internal bug, please report')
-
-         if selfnamed.check then
-            upvalues[string.format('check%s', func2id(selfnamed.check))] = selfnamed.check
+         if head.check then
+            upvalues[string.format('check%s', func2id(head.check))] = head.check
          end
          table.insert(code,
                       string.format('  if select("#", ...) == 2 and istype(select(2, ...), "table") and istype(select(1, ...), "%s")%s then',
-                                    selfnamed.type,
-                                    selfnamed.check and string.format(' and check%s(select(1, ...))', func2id(self.check)) or '')
+                                    head.type,
+                                    head.check and string.format(' and check%s(select(1, ...))', func2id(head.check)) or '')
          )
          table.insert(code, '    local self = select(1, ...)')
          table.insert(code, '    local args = select(2, ...)')

@@ -242,8 +242,10 @@ assert(addfive(5, 'hello') == '5.000000 + 5 = 10.000000 [msg = hello]')
 assert(addfive(5) == '5.000000 + 5 = 10.000000 [msg = i know what i am doing]')
 
 local foobar = {checksum=1234567}
+setmetatable(foobar, {__typename="foobar"})
+
 foobar.addfive = argcheck{
-   {name="self", type="table"},
+   {name="self", type="foobar"},
    {name="x", type="number"},
    {name="msg", type="string", default="i know what i am doing"},
    call =
@@ -259,7 +261,7 @@ assert(foobar:addfive(5) == '5.000000 + 5 = 10.000000 [msg = i know what i am do
 assert(foobar:addfive{x=5} == '5.000000 + 5 = 10.000000 [msg = i know what i am doing] [self.checksum=1234567]')
 
 foobar.addfive = argcheck{
-   {name="self", type="table"},
+   {name="self", type="foobar"},
    {name="x", type="number", default=5},
    {name="msg", type="string", default="wassup"},
    call =
