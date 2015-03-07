@@ -60,6 +60,9 @@ local function rules2defaultrules(rules, rulesmask, rulestype)
       elseif rulemask == '2' then
          table.insert(defaultrules, rule)
       elseif rulemask == '3' then
+         if rule.default or rule.defaulta or rule.defaultf then
+            table.insert(defaultrules, rule)
+         end
       end
    end
    return defaultrules

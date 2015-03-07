@@ -23,7 +23,7 @@ local function generaterules(rules)
    local optperrule = {}
    for ridx, rule in ipairs(rules) do
       if rule.default ~= nil or rule.defaulta or rule.defaultf then
-         optperrule[ridx] = 2 -- here or not here
+         optperrule[ridx] = 3 -- here, nil or not here
       elseif rule.opt then
          optperrule[ridx] = 3 -- here, nil or not here
       else
@@ -42,7 +42,7 @@ local function generaterules(rules)
    -- hence, the mask.
    for variant=nvariant,1,-1 do
       local r = variant
-      local rulemask = {} -- 1/2/3 means present/not present/opt
+      local rulemask = {} -- 1/2/3 means present [ordered]/not present [ordered]/ nil [named or ordered]
       for ridx=1,#rules do
          table.insert(rulemask, math.floor((r-1)/optperrulestride[ridx]) + 1)
          r = (r-1) % optperrulestride[ridx] + 1
