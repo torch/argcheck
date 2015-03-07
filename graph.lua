@@ -20,22 +20,24 @@ local function func2id(func)
    return tostring(func):match('0x([^%s]+)')
 end
 
-local function rules2maskedrules(rules, rulesmask, rulestype)
+local function rules2maskedrules(rules, rulesmask, rulestype, iscall)
    local maskedrules = {}
    for ridx=1,#rulesmask do
       local rule = utils.duptable(rules[ridx])
       rule.__ridx = ridx
-      if rulestype == 'O' then
-         rule.name = nil
-      elseif rulestype == 'M' and ridx == 1 then -- self?
-         rule.name = nil
+      if not iscall then -- do not mess up the name for a call
+         if rulestype == 'O' then
+            rule.name = nil
+         elseif rulestype == 'M' and ridx == 1 then -- self?
+            rule.name = nil
+         end
       end
 
       local rulemask = rulesmask:sub(ridx,ridx)
       if rulemask == '1' then
          table.insert(maskedrules, rule)
       elseif rulemask == '2' then
-      elseif rulemask == '3' then
+      elseif rulemask == '3' and rulestype == 'O' then
          rule.type = 'nil'
          rule.check = nil
          table.insert(maskedrules, rule)
@@ -127,7 +129,7 @@ function ACN:addpath(rules, rulesmask, rulestype) -- 'O', 'N', 'M'
    assert(rulesmask)
    assert(rulestype)
 
-   local maskedrules = rules2maskedrules(rules, rulesmask, rulestype)
+   local maskedrules = rules2maskedrules(rules, rulesmask, rulestype, false)
 
    if rulestype == 'N' then
       table.insert(maskedrules, 1, {type='table'})
@@ -256,7 +258,7 @@ function ACN:generate_ordered_or_named(code, upvalues, rulestype, depth)
       end
 
       -- passed arguments
-      local maskedrules = rules2maskedrules(rules, rulesmask)
+      local maskedrules = rules2maskedrules(rules, rulesmask, rulestype, true)
       for argidx, rule in ipairs(maskedrules) do
 
          local argname =
