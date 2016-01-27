@@ -241,8 +241,16 @@ addfive = argcheck{
 assert(addfive(5, 'hello') == '5.000000 + 5 = 10.000000 [msg = hello]')
 assert(addfive(5) == '5.000000 + 5 = 10.000000 [msg = i know what i am doing]')
 
-local foobar = {checksum=1234567}
-setmetatable(foobar, {__typename="foobar"})
+local foobar
+if pcall(require, 'torch') then
+   local ctors = {}
+   torch.class('foobar', ctors)
+   foobar = ctors.foobar()
+else
+   foobar = {}
+   setmetatable(foobar, {__typename="foobar"})
+end
+foobar.checksum = 1234567
 
 foobar.addfive = argcheck{
    {name="self", type="foobar"},
