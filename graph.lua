@@ -1,5 +1,10 @@
 local usage = require 'argcheck.usage'
 local utils = require 'argcheck.utils'
+local env = require 'argcheck.env'
+local sdascii
+pcall(function()
+         sdascii = require 'sundown.ascii'
+      end)
 
 local function argname2idx(rules, name)
    for idx, rule in ipairs(rules) do
@@ -344,7 +349,7 @@ function ACN:apply(func)
    end
 end
 
-function ACN:usage()
+function ACN:usage(...)
    local txt = {}
    local history = {}
    self:apply(
@@ -354,7 +359,16 @@ function ACN:usage()
             table.insert(txt, usage(self.rules))
          end
       end)
-   return table.concat(txt, '\n\nor\n\n')
+   local args = {}
+   for i=1,select('#', ...) do
+      table.insert(args, string.format("**%s**", env.type(select(i, ...))))
+   end
+   local render = sdascii and sdascii.render or function(...) return ... end
+   return string.format(
+      "%s\n%s\n",
+      table.concat(txt, '\n\nor\n\n'),
+      sdascii.render(string.format("*Got:* %s", table.concat(args, ', ')))
+   )
 end
 
 function ACN:generate(upvalues)
@@ -416,9 +430,9 @@ function ACN:generate(upvalues)
       end
    )
    if quiet then
-      table.insert(code, '  return false, graph:usage()')
+      table.insert(code, '  return false, graph:usage(...)')
    else
-      table.insert(code, '  error(string.format("%s\\ninvalid arguments!", graph:usage()))')
+      table.insert(code, '  error(string.format("%s\\ninvalid arguments!", graph:usage(...)))')
    end
    table.insert(code, 'end')
    return table.concat(code, '\n')
