@@ -25,7 +25,6 @@ end
 -- torch specific
 if pcall(require, 'torch') then
    function env.istype(obj, typename)
-      print("QUERY", typename)
       local thname = torch.typename(obj)
       if thname then
          -- __typename (see below) might be absent
