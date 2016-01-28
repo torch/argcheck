@@ -1,10 +1,5 @@
 local usage = require 'argcheck.usage'
 local utils = require 'argcheck.utils'
-local env = require 'argcheck.env'
-local sdascii
-pcall(function()
-         sdascii = require 'sundown.ascii'
-      end)
 
 local function argname2idx(rules, name)
    for idx, rule in ipairs(rules) do
@@ -356,18 +351,14 @@ function ACN:usage(...)
       function(self)
          if self.rules and not history[self.rules] then
             history[self.rules] = true
-            table.insert(txt, usage(self.rules))
+            table.insert(txt, usage(true, self.rules))
          end
-      end)
-   local args = {}
-   for i=1,select('#', ...) do
-      table.insert(args, string.format("**%s**", env.type(select(i, ...))))
-   end
-   local render = sdascii and sdascii.render or function(...) return ... end
+      end
+   )
    return string.format(
       "%s\n%s\n",
       table.concat(txt, '\n\nor\n\n'),
-      sdascii.render(string.format("*Got:* %s", table.concat(args, ', ')))
+      usage(false, self, ...)
    )
 end
 
