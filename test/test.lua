@@ -252,6 +252,17 @@ else
 end
 foobar.checksum = 1234567
 
+foobar.addnothing = argcheck{
+   {name="self", type="foobar"},
+   debug=true,
+   call =
+      function(self)
+         return self.checksum
+      end
+}
+
+assert(foobar:addnothing() == 1234567)
+
 foobar.addfive = argcheck{
    {name="self", type="foobar"},
    {name="x", type="number"},
