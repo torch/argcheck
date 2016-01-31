@@ -9,4 +9,3 @@ ffi.gc(doc.__noop,
        end)
 
 doc.record()
-

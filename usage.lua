@@ -78,6 +78,7 @@ end
 
 local function usage(truth, rules, ...)
    if truth then
+      local norender = select(1, ...)
       local doc = rules.help or rules.doc
 
       if doc then
@@ -96,7 +97,7 @@ local function usage(truth, rules, ...)
          doc = '\n*Arguments:*\n' .. generateargt(rules)
       end
 
-      if sdascii then
+      if sdascii and not norender then
          doc = sdascii.render(doc)
       end
 

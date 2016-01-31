@@ -1,6 +1,7 @@
 local env = require 'argcheck.env'
 local utils = require 'argcheck.utils'
 local doc = require 'argcheck.doc'
+local usage = require 'argcheck.usage'
 local ACN = require 'argcheck.graph'
 
 local setupvalue = utils.setupvalue
@@ -94,6 +95,11 @@ local function argcheck(rules)
             and not rule.defaulta
             and not rule.defaultf,
          'self cannot be optional, nor having a default value!')
+   end
+
+   -- dump doc if any
+   if rules.doc or rules.help then
+      doc(usage(true, rules, true))
    end
 
    local code, upvalues = generaterules(rules)
