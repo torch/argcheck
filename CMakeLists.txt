@@ -12,5 +12,5 @@ SET(luasrc
 	   ${CMAKE_CURRENT_SOURCE_DIR}/usage.lua
 )
 
-INSTALL(FILES ${luasrc} DESTINATION ${LUADIR}/paths)
+INSTALL(FILES ${luasrc} DESTINATION ${LUADIR}/argcheck)
 
