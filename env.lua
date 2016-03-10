@@ -13,6 +13,7 @@ function env.istype(obj, typename)
 end
 
 function env.type(obj)
+   local mt = getmetatable(obj)
    if type(mt) == 'table' then
       local objtype = rawget(mt, '__typename')
       if objtype then
@@ -28,13 +29,17 @@ if pcall(require, 'torch') then
       local thname = torch.typename(obj)
       if thname then
          -- __typename (see below) might be absent
-         if thname:match(typename) then
+         local match = thname:match(typename)
+         if match and (match ~= typename or match == thname) then
             return true
          end
          local mt = torch.getmetatable(thname)
          while mt do
-            if mt.__typename and mt.__typename:match(typename) then
-               return true
+            if mt.__typename then
+                match = mt.__typename:match(typename)
+                if match and (match ~= typename or match == mt.__typename) then
+                   return true
+                end
             end
             mt = getmetatable(mt)
          end
