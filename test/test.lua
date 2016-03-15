@@ -1,4 +1,5 @@
 local argcheck = require 'argcheck'
+local env = require 'argcheck.env'
 
 function addfive(x)
    return string.format('%f + 5 = %f', x, x+5)
@@ -320,5 +321,18 @@ assert(addstuff(3, 4) == '3.000000 + 4.000000 = 7.000000 [msg=NULL]')
 assert(addstuff{x=3, y=4} == '3.000000 + 4.000000 = 7.000000 [msg=NULL]')
 assert(addstuff(3, 4, 'paf') == '3.000000 + 4.000000 = 7.000000 [msg=paf]')
 assert(addstuff{x=3, y=4, msg='paf'} == '3.000000 + 4.000000 = 7.000000 [msg=paf]')
+
+assert(env.type('string') == 'string')
+assert(env.type(foobar) == 'foobar')
+
+if pcall(require, 'torch') then
+   local t = torch.LongTensor()
+   assert(env.type(t) == 'torch.LongTensor')
+   assert(env.istype(t, 'torch.LongTensor') == true)
+   assert(env.istype(t, 'torch.*Tensor') == true)
+   assert(env.istype(t, '.*Long') == true)
+   assert(env.istype(t, 'torch.IntTensor') == false)
+   assert(env.istype(t, 'torch.Long') == false)
+end
 
 print('PASSED')
