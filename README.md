@@ -95,9 +95,9 @@ at all, `argcheck` will complain:
 ```lua
 arguments:
 {
-  x = number  -- 
+  x = number  --
 }
-   
+
 stdin:2: invalid arguments
 ```
 
@@ -142,8 +142,8 @@ becomes more clear:
 ```lua
 > addfive('')
 stdin:2: invalid arguments
-                                                                                                     
-This function is going to do a simple addition.                                                               
+
+This function is going to do a simple addition.
 Give a number, it adds 5. Amazing.
 
 arguments:
@@ -188,9 +188,9 @@ hello world
 > addfive(4)
 
 stdin:2: invalid arguments
-                                                                                                     
-This function is going to do a simple addition.                                                               
-Give a number, it adds 5. Amazing.                                                                            
+
+This function is going to do a simple addition.
+Give a number, it adds 5. Amazing.
 
 arguments:
 {
@@ -281,6 +281,24 @@ hello world
 0.000000 + 5 = 5.000000
 nil
 ```
+
+### Torch Tensors
+Argcheck supports Torch Tensors type checks.
+Specific tensor types like `Int`, `Float`, or `Double` can be
+checked with `torch.<Type>Tensor`.
+Any tensor type can be checked with `torch.*Tensor`.
+
+```lua
+check = argcheck{
+  {name="anyTensor", type="torch.*Tensor"},
+  {name="fTensor", type="torch.FloatTensor"}
+}
+
+check(torch.IntTensor(), torch.FloatTensor()) -- Good.
+check(torch.FloatTensor(), torch.FloatTensor()) -- Good.
+check(torch.FloatTensor(), torch.IntTensor()) -- Invalid.
+```
+
 
 ### Specific per-rule check
 
