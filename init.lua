@@ -99,7 +99,7 @@ local function argcheck(rules)
 
    -- dump doc if any
    if rules.doc or rules.help then
-      doc(usage(true, rules, true))
+      doc(usage.render(usage.usage(true, rules, true)))
    end
 
    local code, upvalues = generaterules(rules)

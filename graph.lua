@@ -351,20 +351,21 @@ function ACN:usage(...)
       function(self)
          if self.rules and not history[self.rules] then
             history[self.rules] = true
-            table.insert(txt, usage(true, self.rules))
+            table.insert(txt, usage.usage(true, self.rules))
          end
       end
    )
    return string.format(
       "%s\n%s\n",
       table.concat(txt, '\n\nor\n\n'),
-      usage(false, self, ...)
+      usage.usage(false, self, ...)
    )
 end
 
 function ACN:generate(upvalues)
    assert(upvalues, 'upvalues table missing')
    local code = {}
+   table.insert(code, 'local usage = require "argcheck.usage"')
    table.insert(code, 'return function(...)')
    table.insert(code, '  local narg = select("#", ...)')
    self:generate_ordered_or_named(code, upvalues, 'O')
@@ -421,9 +422,9 @@ function ACN:generate(upvalues)
       end
    )
    if quiet then
-      table.insert(code, '  return false, graph:usage(...)')
+      table.insert(code, '  return false, usage.render(graph:usage(...))')
    else
-      table.insert(code, '  error(string.format("%s\\ninvalid arguments!", graph:usage(...)))')
+      table.insert(code, '  error(string.format("%s\\ninvalid arguments!", usage.render(graph:usage(...))))')
    end
    table.insert(code, 'end')
    return table.concat(code, '\n')
