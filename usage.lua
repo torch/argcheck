@@ -4,6 +4,8 @@ pcall(function()
          sdascii = require 'sundown.ascii'
       end)
 
+local usage = {}
+
 local function generateargp(rules)
    local txt = {}
    for idx, rule in ipairs(rules) do
@@ -76,7 +78,16 @@ local function generateargt(rules)
    return txt
 end
 
-local function usage(truth, rules, ...)
+function usage.render(doc)
+   -- We render any markdown in the input into ANSI color codes using sundown, but only if stdout and stderr are terminals
+   if sdascii and pcall(require, 'torch') and torch.isatty(io.stderr) and torch.isatty(io.stdout) then
+      doc = sdascii.render(doc)
+   end
+
+   return doc
+end
+
+function usage.usage(truth, rules, ...)
    if truth then
       local norender = select(1, ...)
       local doc = rules.help or rules.doc
@@ -95,10 +106,6 @@ local function usage(truth, rules, ...)
 
       if not doc then
          doc = '\n*Arguments:*\n' .. generateargt(rules)
-      end
-
-      if sdascii and not norender then
-         doc = sdascii.render(doc)
       end
 
       return doc
@@ -137,9 +144,6 @@ local function usage(truth, rules, ...)
          args[argtblidx] = string.format("**table**={ %s }", table.concat(argtbl, ', '))
       end
       local doc = string.format("*Got:* %s", table.concat(args, ', '))
-      if sdascii then
-         doc = sdascii.render(doc)
-      end
       return doc
    end
 end
