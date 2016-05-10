@@ -333,6 +333,16 @@ if pcall(require, 'torch') then
    assert(env.istype(t, '.*Long') == true)
    assert(env.istype(t, 'torch.IntTensor') == false)
    assert(env.istype(t, 'torch.Long') == false)
+
+   -- test argcheck function serialization
+   local f = argcheck{
+      {name='arg', type='string'},
+      call = function(arg)
+         print(arg)
+      end
+   }
+   local m = torch.MemoryFile()
+   m:writeObject(f)
 end
 
 print('PASSED')
