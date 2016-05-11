@@ -365,8 +365,8 @@ end
 function ACN:generate(upvalues)
    assert(upvalues, 'upvalues table missing')
    local code = {}
-   table.insert(code, 'local usage = require "argcheck.usage"')
    table.insert(code, 'return function(...)')
+   table.insert(code, '  local usage = require "argcheck.usage"')
    table.insert(code, '  local narg = select("#", ...)')
    self:generate_ordered_or_named(code, upvalues, 'O')
 
