@@ -4,9 +4,9 @@ argcheck
 A powerful function argument checker and function overloading system for
 Lua or LuaJIT.
 
-Argcheck generates specific code for checking arguments of a function. This
+`argcheck` generates specific code for checking arguments of a function. This
 allows complex argument checking (possibly with optional values), with
-little overhead (with [LuaJIT](http://luajit.org)). Argcheck computes a
+little overhead (with [LuaJIT](http://luajit.org)). `argcheck` computes a
 tree of all possible variants of arguments, allowing efficient overloading
 and default argument management.
 
@@ -34,7 +34,7 @@ Changelog
      - Rewrote completely the code generation.
      - Now creates a tree of possible argument paths (much more efficient).
      - Thanks to the tree approach, many bugs have been fixed.
-     - Argcheck will produce an error if there are ambiguous argument rules.
+     - `argcheck` will produce an error if there are ambiguous argument rules.
      - The feature `chain` is still deprecated (but available). Use `overload` instead.
      - True overloading is happening. Contrary to `chain`, `overload` functions must be overwritten.
      - Same functionalities than in 1.0, plus
@@ -42,10 +42,10 @@ Changelog
         - Can generate a dot graphviz file of the argument paths for debugging purposes.
 
   - Version 1.0
-     - Simplified the way of calling argcheck.
+     - Simplified the way of calling `argcheck`.
      - Same functionalities than before, except named method call were not handled anymore.
      - Added the `call` option to call a function if the arguments match given rules.
-     - Added the `chain` option to chain several argcheck function calls (a cheap version of overloading).
+     - Added the `chain` option to chain several `argcheck` function calls (a cheap version of overloading).
      - Simplified the way of adding a type.
 
   - Version 0.5
@@ -67,7 +67,7 @@ the global namespace.  The value returned by the require is a function: for
 most usages, it will be the only thing you need.
 
 _Note that in the following examples we do not use local variables for
-check functions or example functions. This is bad practive, but helpful if
+check functions or example functions. This is bad practice, but helpful if
 you want to cut-and-paste the code in your interactive lua to see how
 this is running._
 
@@ -76,10 +76,10 @@ arguments, according to rules provided by the user. Assume you have a
 function which requires a unique number argument:
 ```lua
 function addfive(x)
-  print(string.format('%f + 5 = %f', x, x+5))
+  print(string.format('%f + 5 = %f', x, x + 5))
 end
 ```
-You can make sure everything goes fine by doing creating the rule:
+You can make sure everything goes fine by creating the rule:
 ```lua
 check = argcheck{
    {name="x", type="number"}
@@ -87,7 +87,7 @@ check = argcheck{
 
 function addfive(...)
    local x = check(...)
-   print(string.format('%f + 5 = %f', x, x+5))
+   print(string.format('%f + 5 = %f', x, x + 5))
 end
 ```
 If a user try to pass a wrong argument, too many arguments, or no arguments
@@ -121,7 +121,7 @@ one to your function:
 ```
 
 ### Help (or doc)
-Argcheck encourages you to add help to your function. You can document each argument:
+`argcheck` encourages you to add help to your function. You can document each argument:
 ```lua
 check = argcheck{
    {name="x", type="number", default=0, help="the age of the captain"}
@@ -156,7 +156,7 @@ Note that is (equivalently) possible to use the key `doc=` instead of `help=`.
 
 ### Multiple arguments
 
-Until now, our function had only one argument. Obviously, argcheck can
+Until now, our function had only one argument. Obviously, `argcheck` can
 handle as many as you wish:
 ```lua
 check = argcheck{
@@ -170,11 +170,11 @@ Give a number, it adds 5. Amazing.
 
 function addfive(...)
   local x, msg = check(...)
-  print(string.format('%f + 5 = %f', x, x+5))
+  print(string.format('%f + 5 = %f', x, x + 5))
   print(msg)
 end
 ```
-Argcheck handles well various cases, including those where some arguments
+`argcheck` handles well various cases, including those where some arguments
 with defaults values might be missing:
 ```lua
 > addfive(4, 'hello world')
@@ -212,12 +212,12 @@ check = argcheck{
 
 function mul(...)
    local x, y = check(...)
-   print(string.format('%f x %f = %f', x, y, x*y))
+   print(string.format('%f x %f = %f', x, y, x * y))
 end
 ```
 argument `y` will take the value of `x` if it is not passed during the function call:
 ```lua
-> mul(3,4)
+> mul(3, 4)
 3.000000 x 4.000000 = 12.000000
 > mul(3)
 3.000000 x 3.000000 = 9.000000
@@ -238,7 +238,7 @@ check = argcheck{
 
 function mul(...)
    local x, y = check(...)
-   print(string.format('%f x %f = %f', x, y, x*y))
+   print(string.format('%f x %f = %f', x, y, x * y))
 end
 ```
 
@@ -267,7 +267,7 @@ check = argcheck{
 
 function addfive(...)
    local x, msg = check(...)
-   print(string.format('%f + 5 = %f', x, x+5))
+   print(string.format('%f + 5 = %f', x, x + 5))
    print(msg)
 end
 ```
@@ -283,7 +283,7 @@ nil
 ```
 
 ### Torch Tensors
-Argcheck supports Torch Tensors type checks.
+`argcheck` supports Torch `Tensors` type checks.
 Specific tensor types like `Int`, `Float`, or `Double` can be
 checked with `torch.<Type>Tensor`.
 Any tensor type can be checked with `torch.*Tensor`.
@@ -315,7 +315,7 @@ check = argcheck{
 
 function addfive(...)
    local x = check(...)
-   print(string.format('%f + 5 = %f', x, x+5))
+   print(string.format('%f + 5 = %f', x, x + 5))
 end
 
 > addfive(3)
@@ -332,7 +332,7 @@ arguments:
 
 ### Named arguments
 
-Argcheck handles named argument calls. Following the previous example, both
+`argcheck` handles named argument calls. Following the previous example, both
 ```lua
 addfive(1, "hello world")
 ```
@@ -365,7 +365,7 @@ object:foobar{x=..., msg=...}
 (where `...` is the actual content of x and msg). This translates to
 `foobar(object, {x=..., msg=...})`, which is not a regular named function
 call, given that the `object` itself should not be treated as a named
-argument. Argcheck will handle such calls, provided the name of the object
+argument. `argcheck` will handle such calls, provided the name of the object
 argument is `self`, in the rule definition. For e.g.:
 ```lua
 local object = {checksum=1234567} -- the object is just a table here
@@ -377,7 +377,7 @@ local check = argcheck{
 
 function object.foobar(...) -- note the '.', given we type-check self too
    local self, x, msg = check(...)
-   print(string.format('%f + 5 = %f [msg = %s] [self.checksum=%s]', x, x+5, msg, self.checksum))
+   print(string.format('%f + 5 = %f [msg = %s] [self.checksum=%s]', x, x + 5, msg, self.checksum))
 end
 
 -- method ordered arguments call
@@ -401,7 +401,7 @@ a method, if the name of the first rule is `self`.
 
 ### Options global to all rules
 
-Argcheck has several interesting global options, as the `help` (or `doc`) we have introduced already.
+`argcheck` has several interesting global options, as the `help` (or `doc`) we have introduced already.
 Those global options are simply set in the main `argcheck` table:
 ```lua
 check = argcheck{
@@ -423,7 +423,7 @@ addfive = argcheck{
    {name="x", type="number"},
 
    call = function(x)
-            print(string.format('%f + 5 = %f', x, x+5))
+            print(string.format('%f + 5 = %f', x, x + 5))
           end
 }
 
@@ -446,7 +446,7 @@ feature.
 
 In some cases, it might be interesting to get all arguments into a
 table. This is not recommended in general, as creating a table slows down
-the checking process. However, when one was *a lot* of arguments, the
+the checking process. However, when one uses *a lot* of arguments, the
 `pack` option might be of interest. The function created by `argcheck`
 then returns a table containing all arguments with rule names as keys.
 ```lua
@@ -531,7 +531,7 @@ false   arguments:
 
 #### Overloading
 
-It is possible to overload previous created argchecks manually. E.g., in our example,
+It is possible to overload previous created `argcheck`s manually. E.g., in our example,
 if we want `addfive()` to handle the case of a number or string argument,
 one could leverage the `quiet` global option and do the following:
 ```lua
@@ -550,7 +550,7 @@ function addfive(...)
   -- first case
   local status, x = checknum(...)
   if status then
-    print(string.format('%f + 5 = %f', x, x+5))
+    print(string.format('%f + 5 = %f', x, x + 5))
     return
   end
 
@@ -567,7 +567,7 @@ function addfive(...)
 end
 
 > addfive(123)
-5.000000 + 5 = 10.000000
+123.000000 + 5 = 128.000000
 
 > addfive('hi')
 hi .. 5 = hi5
@@ -608,7 +608,7 @@ The previous example is then equivalent to:
 addfive = argcheck{
   {name="x", type="number"},
   call = function(x) -- called in case of success
-           print(string.format('%f + 5 = %f', x, x+5))
+           print(string.format('%f + 5 = %f', x, x + 5))
          end
 }
 
@@ -652,7 +652,7 @@ addfive = argcheck{
    {name="x", type="number"},
    call =
       function(x) -- called in case of success
-         print(string.format('%f + 5 = %f', x, x+5))
+         print(string.format('%f + 5 = %f', x, x + 5))
       end
 }
 
@@ -662,7 +662,7 @@ addfive = argcheck{
    overload = addfive,
    call =
       function(x, msg) -- called in case of success
-         print(string.format('%f + 5 = %f [msg = %s]', x, x+5, msg))
+         print(string.format('%f + 5 = %f [msg = %s]', x, x + 5, msg))
       end
 }
 ```
@@ -692,7 +692,7 @@ Note that the first function is then never called (you know what you are doing!)
 
 #### Debug
 
-Adding `debug=true` as global option will simply dump in stdout the
+Adding `debug=true` as global option will simply dump in `stdout` the
 corresponding code for the given checking argument function. It will also
 return a [dot graph](http://www.graphviz.org), for better understanding of
 what is going on.
